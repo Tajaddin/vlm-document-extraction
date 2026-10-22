@@ -1,0 +1,76 @@
+{
+  "what": "k6 against the serverless intake (API Gateway -> TypeScript Lambda -> DynamoDB, S3, SQS) on the Floci emulator",
+  "caveat": "emulator on one machine (Lambda in local containers): shows the code path's behaviour under load, not AWS capacity",
+  "machine": {
+    "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "cpus": 20,
+    "os": "Windows-11"
+  },
+  "submit": {
+    "p50_ms": 9.2,
+    "p95_ms": 15.1,
+    "p99_ms": 59.5,
+    "max_ms": 2148.6,
+    "count": 4503
+  },
+  "duplicate_submit": {
+    "p50_ms": 7.5,
+    "p95_ms": 11.6,
+    "p99_ms": 22.3,
+    "max_ms": 1391.0,
+    "count": 4503
+  },
+  "status": {
+    "p50_ms": 5.7,
+    "p95_ms": 8.5,
+    "p99_ms": 12.5,
+    "max_ms": 2523.3,
+    "count": 4503
+  },
+  "submit_by_rate": {
+    "5": {
+      "offered_per_s": 5,
+      "seconds": 60,
+      "p50_ms": 10.2,
+      "p95_ms": 15.0,
+      "p99_ms": 1139.2
+    },
+    "10": {
+      "offered_per_s": 10,
+      "seconds": 60,
+      "p50_ms": 9.8,
+      "p95_ms": 12.7,
+      "p99_ms": 15.4
+    },
+    "20": {
+      "offered_per_s": 20,
+      "seconds": 60,
+      "p50_ms": 8.9,
+      "p95_ms": 12.1,
+      "p99_ms": 25.8
+    },
+    "40": {
+      "offered_per_s": 40,
+      "seconds": 60,
+      "p50_ms": 9.1,
+      "p95_ms": 17.0,
+      "p99_ms": 71.4
+    }
+  },
+  "http_req_failed_rate": 0,
+  "dropped_iterations": 1,
+  "checks": {
+    "202 accepted": {
+      "passes": 4503,
+      "fails": 0
+    },
+    "duplicate is the same job": {
+      "passes": 4503,
+      "fails": 0
+    },
+    "status readable": {
+      "passes": 4503,
+      "fails": 0
+    }
+  }
+}
