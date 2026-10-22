@@ -17,7 +17,7 @@ from typing import Any
 import httpx
 import numpy as np
 
-from vde import log
+from vde import checks, log
 from vde.documents import Document
 from vde.extract import prompts
 from vde.extract.base import Extractor
@@ -188,6 +188,35 @@ def environment(ollama_url: str | None) -> dict[str, Any]:
     return env
 
 
+def review(
+    docs: Sequence[Document], rows: Sequence[dict[str, Any]], per_doc: Sequence[dict[str, Any]]
+) -> dict[str, Any]:
+    """Do the review flags (vde.checks) catch the wrong extractions? A document's extraction is wrong when any field
+    is wrong, missed or invented. The same flags run on the gold labels show how often they fire on correct data."""
+    table: Counter[str] = Counter()
+    by_flag: dict[str, Counter[str]] = {}
+    gold_flagged: Counter[str] = Counter()
+    for doc, row, scored in zip(docs, rows, per_doc, strict=True):
+        wrong = scored["fp"] + scored["fn"] > 0
+        raised = checks.flags(doc.kind, row["fields"])
+        table[("flagged" if raised else "passed") + ("_wrong" if wrong else "_right")] += 1
+        for flag in raised:
+            by_flag.setdefault(flag, Counter())["wrong" if wrong else "right"] += 1
+        for flag in checks.flags(doc.kind, doc.gold):
+            gold_flagged[flag] += 1
+    wrong_total = table["flagged_wrong"] + table["passed_wrong"]
+    flagged_total = table["flagged_wrong"] + table["flagged_right"]
+    return {
+        "documents_wrong": wrong_total,
+        "documents_flagged": flagged_total,
+        "wrong_caught": round(table["flagged_wrong"] / wrong_total, 4) if wrong_total else None,
+        "flagged_that_were_wrong": round(table["flagged_wrong"] / flagged_total, 4) if flagged_total else None,
+        "table": dict(table),
+        "by_flag": {k: dict(v) for k, v in sorted(by_flag.items())},
+        "flags_on_gold_labels": dict(gold_flagged),
+    }
+
+
 def report(
     name: str,
     docs: Sequence[Document],
@@ -205,4 +234,5 @@ def report(
         "examples": [e.id for e in examples],
         "document_ids": [d.id for d in docs],
         **scores,
+        "review": review(docs, rows, scores["per_document"]),
     }
