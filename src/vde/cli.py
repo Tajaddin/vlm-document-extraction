@@ -98,7 +98,7 @@ def data_report(out: Annotated[Path, typer.Option()] = Path("reports/data/fatura
 @app.command("eval")
 def evaluate(
     dataset: Annotated[str, typer.Option(help="cord or fatura")],
-    approach: Annotated[str, typer.Option(help="vlm, ocr or fake")] = "vlm",
+    approach: Annotated[str, typer.Option(help="vlm, ocr, vertex or fake")] = "vlm",
     model: Annotated[str | None, typer.Option(help="Ollama model; defaults to VDE_VLM_MODEL / VDE_TEXT_MODEL")] = None,
     split: Annotated[str, typer.Option(help="dev (prompt work) or test (scored once)")] = "test",
     shots: Annotated[int, typer.Option(help="few-shot examples")] = 0,
@@ -127,11 +127,19 @@ def evaluate(
         if shots:
             raise typer.BadParameter("the OCR baseline runs zero-shot")
         extractor = OcrLlmExtractor(client, model, variant)  # type: ignore[arg-type]
+    elif approach == "vertex":  # bills VDE_VERTEX_PROJECT; see docs/DEPLOY.md
+        from vde.extract.vertex import VertexExtractor
+
+        if shots:
+            raise typer.BadParameter("the Vertex AI extractor runs zero-shot")
+        vertex = VertexExtractor.from_settings(s)
+        model = vertex.model
+        extractor = vertex
     elif approach == "fake":
         model = "fake"
         extractor = FakeExtractor()
     else:
-        raise typer.BadParameter("approach vlm|ocr|fake")
+        raise typer.BadParameter("approach vlm|ocr|vertex|fake")
     run_name = name or f"{approach}-{model.replace(':', '-').replace('/', '-')}-{shots}shot" + (
         f"-{variant}" if dataset == "cord" else ""
     )
