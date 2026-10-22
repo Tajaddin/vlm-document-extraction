@@ -1,0 +1,14 @@
+{
+  "what": "vde.metrics vs Donut's JSONParseEvaluator on CORD v2 validation gold with seeded errors",
+  "donut": "https://raw.githubusercontent.com/clovaai/donut/4cfcf972560e1a0f26eb3e294c8fc88a0d336626/donut/util.py",
+  "documents": 100,
+  "field_f1": {
+    "donut": 0.7901554404145078,
+    "vde": 0.7901554404145078
+  },
+  "ted_accuracy_mean": {
+    "donut": 0.8837623919810811,
+    "vde": 0.8837623919810809
+  },
+  "ted_accuracy_max_difference_per_document": 0.0
+}
