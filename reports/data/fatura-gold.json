@@ -113,8 +113,8 @@
       "parse_rate": 1.0
     },
     "total": {
-      "printed": 8000,
-      "parsed": 8000,
+      "printed": 8400,
+      "parsed": 8400,
       "parse_rate": 1.0
     }
   },
