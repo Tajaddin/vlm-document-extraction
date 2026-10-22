@@ -16,7 +16,9 @@ def trend(metrics: dict[str, Any], name: str) -> dict[str, Any] | None:
     if not m:
         return None
     v = m["values"]
-    return {k: round(v[s], 1) for k, s in (("p50_ms", "p(50)"), ("p95_ms", "p(95)"), ("p99_ms", "p(99)"), ("max_ms", "max"))} | {"count": int(v["count"])}
+    return {
+        k: round(v[s], 1) for k, s in (("p50_ms", "p(50)"), ("p95_ms", "p(95)"), ("p99_ms", "p(99)"), ("max_ms", "max"))
+    } | {"count": int(v["count"])}
 
 
 def main() -> int:
@@ -33,7 +35,10 @@ def main() -> int:
         sub = metrics.get(f"submit_ms{{step:{rate}}}") or {}
         steps[rate] = {"offered_per_s": int(rate), "seconds": a.step}
         if sub:
-            steps[rate] |= {k: round(sub["values"][s], 1) for k, s in (("p50_ms", "p(50)"), ("p95_ms", "p(95)"), ("p99_ms", "p(99)"))}
+            steps[rate] |= {
+                k: round(sub["values"][s], 1)
+                for k, s in (("p50_ms", "p(50)"), ("p95_ms", "p(95)"), ("p99_ms", "p(99)"))
+            }
     checks = {c["name"]: {"passes": c["passes"], "fails": c["fails"]} for c in data["root_group"]["checks"]}
     failed = metrics.get("http_req_failed", {}).get("values", {})
     report = {
