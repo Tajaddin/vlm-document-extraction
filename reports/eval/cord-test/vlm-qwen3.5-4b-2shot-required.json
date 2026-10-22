@@ -1,0 +1,1089 @@
+{
+  "run": "vlm-qwen3.5-4b-2shot-required",
+  "kind": "receipt",
+  "prompt_version": "p2",
+  "config": {
+    "dataset": "cord",
+    "split": "test",
+    "approach": "vlm",
+    "model": "qwen3.5:4b",
+    "shots": 2,
+    "receipt_schema": "required",
+    "num_ctx": 8192,
+    "max_output_tokens": 2048,
+    "temperature": 0,
+    "environment": {
+      "python": "3.12.12",
+      "os": "Windows-11",
+      "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+      "gpu": "NVIDIA GeForce RTX 4060, 8188 MiB",
+      "ollama": "0.32.5",
+      "placement": "100% GPU"
+    }
+  },
+  "examples": [
+    "cord-validation-035",
+    "cord-validation-041"
+  ],
+  "document_ids": [
+    "cord-test-000",
+    "cord-test-001",
+    "cord-test-002",
+    "cord-test-003",
+    "cord-test-004",
+    "cord-test-005",
+    "cord-test-006",
+    "cord-test-007",
+    "cord-test-008",
+    "cord-test-009",
+    "cord-test-010",
+    "cord-test-011",
+    "cord-test-012",
+    "cord-test-013",
+    "cord-test-014",
+    "cord-test-015",
+    "cord-test-016",
+    "cord-test-017",
+    "cord-test-018",
+    "cord-test-019",
+    "cord-test-020",
+    "cord-test-021",
+    "cord-test-022",
+    "cord-test-023",
+    "cord-test-024",
+    "cord-test-025",
+    "cord-test-026",
+    "cord-test-027",
+    "cord-test-028",
+    "cord-test-029",
+    "cord-test-030",
+    "cord-test-031",
+    "cord-test-032",
+    "cord-test-033",
+    "cord-test-034",
+    "cord-test-035",
+    "cord-test-036",
+    "cord-test-037",
+    "cord-test-038",
+    "cord-test-039",
+    "cord-test-040",
+    "cord-test-041",
+    "cord-test-042",
+    "cord-test-043",
+    "cord-test-044",
+    "cord-test-045",
+    "cord-test-046",
+    "cord-test-047",
+    "cord-test-048",
+    "cord-test-049",
+    "cord-test-050",
+    "cord-test-051",
+    "cord-test-052",
+    "cord-test-053",
+    "cord-test-054",
+    "cord-test-055",
+    "cord-test-056",
+    "cord-test-057",
+    "cord-test-058",
+    "cord-test-059",
+    "cord-test-060",
+    "cord-test-061",
+    "cord-test-062",
+    "cord-test-063",
+    "cord-test-064",
+    "cord-test-065",
+    "cord-test-066",
+    "cord-test-067",
+    "cord-test-068",
+    "cord-test-069",
+    "cord-test-070",
+    "cord-test-071",
+    "cord-test-072",
+    "cord-test-073",
+    "cord-test-074",
+    "cord-test-075",
+    "cord-test-076",
+    "cord-test-077",
+    "cord-test-078",
+    "cord-test-079",
+    "cord-test-080",
+    "cord-test-081",
+    "cord-test-082",
+    "cord-test-083",
+    "cord-test-084",
+    "cord-test-085",
+    "cord-test-086",
+    "cord-test-087",
+    "cord-test-088",
+    "cord-test-089",
+    "cord-test-090",
+    "cord-test-091",
+    "cord-test-092",
+    "cord-test-093",
+    "cord-test-094",
+    "cord-test-095",
+    "cord-test-096",
+    "cord-test-097",
+    "cord-test-098",
+    "cord-test-099"
+  ],
+  "documents": 100,
+  "field_f1": 0.4744,
+  "field_f1_95ci": [
+    0.4069,
+    0.5369
+  ],
+  "ted_accuracy": 0.3382,
+  "ted_accuracy_95ci": [
+    0.2698,
+    0.4085
+  ],
+  "errors": {
+    "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":": 14,
+    "truncated": 8,
+    "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9857 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":": 1,
+    "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9912 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":": 1,
+    "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9938 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":": 1
+  },
+  "latency": {
+    "first_document_s": 13.184,
+    "p50_s": 4.756,
+    "p95_s": 20.744,
+    "mean_s": 6.062,
+    "prompt_tokens_mean": 6758.0,
+    "completion_tokens_mean": 281.2
+  },
+  "per_document": [
+    {
+      "id": "cord-test-000",
+      "tp": 2,
+      "fp": 8,
+      "fn": 9,
+      "ted_accuracy": 0.0,
+      "seconds": 13.184,
+      "error": null
+    },
+    {
+      "id": "cord-test-001",
+      "tp": 3,
+      "fp": 12,
+      "fn": 5,
+      "ted_accuracy": 0.2647,
+      "seconds": 5.032,
+      "error": null
+    },
+    {
+      "id": "cord-test-002",
+      "tp": 6,
+      "fp": 9,
+      "fn": 4,
+      "ted_accuracy": 0.0,
+      "seconds": 7.648,
+      "error": null
+    },
+    {
+      "id": "cord-test-003",
+      "tp": 5,
+      "fp": 1,
+      "fn": 3,
+      "ted_accuracy": 0.6212,
+      "seconds": 4.086,
+      "error": null
+    },
+    {
+      "id": "cord-test-004",
+      "tp": 13,
+      "fp": 6,
+      "fn": 1,
+      "ted_accuracy": 0.0,
+      "seconds": 7.852,
+      "error": null
+    },
+    {
+      "id": "cord-test-005",
+      "tp": 0,
+      "fp": 0,
+      "fn": 7,
+      "ted_accuracy": 0.0,
+      "seconds": 1.214,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-006",
+      "tp": 11,
+      "fp": 5,
+      "fn": 1,
+      "ted_accuracy": 0.6875,
+      "seconds": 5.357,
+      "error": null
+    },
+    {
+      "id": "cord-test-007",
+      "tp": 4,
+      "fp": 5,
+      "fn": 4,
+      "ted_accuracy": 0.575,
+      "seconds": 3.651,
+      "error": null
+    },
+    {
+      "id": "cord-test-008",
+      "tp": 7,
+      "fp": 12,
+      "fn": 7,
+      "ted_accuracy": 0.0,
+      "seconds": 6.18,
+      "error": null
+    },
+    {
+      "id": "cord-test-009",
+      "tp": 4,
+      "fp": 6,
+      "fn": 2,
+      "ted_accuracy": 0.0,
+      "seconds": 5.548,
+      "error": null
+    },
+    {
+      "id": "cord-test-010",
+      "tp": 7,
+      "fp": 2,
+      "fn": 1,
+      "ted_accuracy": 0.0,
+      "seconds": 4.766,
+      "error": null
+    },
+    {
+      "id": "cord-test-011",
+      "tp": 6,
+      "fp": 0,
+      "fn": 0,
+      "ted_accuracy": 1.0,
+      "seconds": 3.612,
+      "error": null
+    },
+    {
+      "id": "cord-test-012",
+      "tp": 7,
+      "fp": 7,
+      "fn": 9,
+      "ted_accuracy": 0.2804,
+      "seconds": 4.256,
+      "error": null
+    },
+    {
+      "id": "cord-test-013",
+      "tp": 7,
+      "fp": 7,
+      "fn": 7,
+      "ted_accuracy": 0.0,
+      "seconds": 5.416,
+      "error": null
+    },
+    {
+      "id": "cord-test-014",
+      "tp": 0,
+      "fp": 0,
+      "fn": 25,
+      "ted_accuracy": 0.0,
+      "seconds": 0.98,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-015",
+      "tp": 4,
+      "fp": 8,
+      "fn": 5,
+      "ted_accuracy": 0.6056,
+      "seconds": 4.15,
+      "error": null
+    },
+    {
+      "id": "cord-test-016",
+      "tp": 0,
+      "fp": 0,
+      "fn": 21,
+      "ted_accuracy": 0.0,
+      "seconds": 21.634,
+      "error": "truncated"
+    },
+    {
+      "id": "cord-test-017",
+      "tp": 13,
+      "fp": 8,
+      "fn": 9,
+      "ted_accuracy": 0.4639,
+      "seconds": 5.824,
+      "error": null
+    },
+    {
+      "id": "cord-test-018",
+      "tp": 3,
+      "fp": 6,
+      "fn": 4,
+      "ted_accuracy": 0.5185,
+      "seconds": 3.769,
+      "error": null
+    },
+    {
+      "id": "cord-test-019",
+      "tp": 3,
+      "fp": 9,
+      "fn": 6,
+      "ted_accuracy": 0.0,
+      "seconds": 8.538,
+      "error": null
+    },
+    {
+      "id": "cord-test-020",
+      "tp": 0,
+      "fp": 0,
+      "fn": 19,
+      "ted_accuracy": 0.0,
+      "seconds": 20.345,
+      "error": "truncated"
+    },
+    {
+      "id": "cord-test-021",
+      "tp": 2,
+      "fp": 11,
+      "fn": 9,
+      "ted_accuracy": 0.0,
+      "seconds": 5.455,
+      "error": null
+    },
+    {
+      "id": "cord-test-022",
+      "tp": 7,
+      "fp": 5,
+      "fn": 2,
+      "ted_accuracy": 0.7423,
+      "seconds": 4.878,
+      "error": null
+    },
+    {
+      "id": "cord-test-023",
+      "tp": 9,
+      "fp": 2,
+      "fn": 0,
+      "ted_accuracy": 0.7647,
+      "seconds": 4.663,
+      "error": null
+    },
+    {
+      "id": "cord-test-024",
+      "tp": 5,
+      "fp": 10,
+      "fn": 10,
+      "ted_accuracy": 0.7658,
+      "seconds": 4.743,
+      "error": null
+    },
+    {
+      "id": "cord-test-025",
+      "tp": 12,
+      "fp": 4,
+      "fn": 0,
+      "ted_accuracy": 0.8,
+      "seconds": 5.306,
+      "error": null
+    },
+    {
+      "id": "cord-test-026",
+      "tp": 9,
+      "fp": 7,
+      "fn": 9,
+      "ted_accuracy": 0.8,
+      "seconds": 4.959,
+      "error": null
+    },
+    {
+      "id": "cord-test-027",
+      "tp": 8,
+      "fp": 4,
+      "fn": 1,
+      "ted_accuracy": 0.6027,
+      "seconds": 4.579,
+      "error": null
+    },
+    {
+      "id": "cord-test-028",
+      "tp": 14,
+      "fp": 3,
+      "fn": 0,
+      "ted_accuracy": 0.8515,
+      "seconds": 5.847,
+      "error": null
+    },
+    {
+      "id": "cord-test-029",
+      "tp": 10,
+      "fp": 5,
+      "fn": 18,
+      "ted_accuracy": 0.3156,
+      "seconds": 5.023,
+      "error": null
+    },
+    {
+      "id": "cord-test-030",
+      "tp": 5,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.6182,
+      "seconds": 3.486,
+      "error": null
+    },
+    {
+      "id": "cord-test-031",
+      "tp": 0,
+      "fp": 0,
+      "fn": 11,
+      "ted_accuracy": 0.0,
+      "seconds": 1.346,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-032",
+      "tp": 0,
+      "fp": 0,
+      "fn": 8,
+      "ted_accuracy": 0.0,
+      "seconds": 1.123,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-033",
+      "tp": 9,
+      "fp": 2,
+      "fn": 5,
+      "ted_accuracy": 0.6404,
+      "seconds": 4.224,
+      "error": null
+    },
+    {
+      "id": "cord-test-034",
+      "tp": 3,
+      "fp": 9,
+      "fn": 8,
+      "ted_accuracy": 0.0,
+      "seconds": 4.448,
+      "error": null
+    },
+    {
+      "id": "cord-test-035",
+      "tp": 15,
+      "fp": 5,
+      "fn": 0,
+      "ted_accuracy": 0.7252,
+      "seconds": 5.768,
+      "error": null
+    },
+    {
+      "id": "cord-test-036",
+      "tp": 0,
+      "fp": 0,
+      "fn": 11,
+      "ted_accuracy": 0.0,
+      "seconds": 1.251,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-037",
+      "tp": 2,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.8431,
+      "seconds": 3.636,
+      "error": null
+    },
+    {
+      "id": "cord-test-038",
+      "tp": 0,
+      "fp": 0,
+      "fn": 32,
+      "ted_accuracy": 0.0,
+      "seconds": 1.39,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-039",
+      "tp": 7,
+      "fp": 18,
+      "fn": 14,
+      "ted_accuracy": 0.2613,
+      "seconds": 8.1,
+      "error": null
+    },
+    {
+      "id": "cord-test-040",
+      "tp": 10,
+      "fp": 2,
+      "fn": 1,
+      "ted_accuracy": 0.9067,
+      "seconds": 4.27,
+      "error": null
+    },
+    {
+      "id": "cord-test-041",
+      "tp": 18,
+      "fp": 21,
+      "fn": 5,
+      "ted_accuracy": 0.4873,
+      "seconds": 8.715,
+      "error": null
+    },
+    {
+      "id": "cord-test-042",
+      "tp": 0,
+      "fp": 0,
+      "fn": 9,
+      "ted_accuracy": 0.0,
+      "seconds": 1.08,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-043",
+      "tp": 0,
+      "fp": 0,
+      "fn": 10,
+      "ted_accuracy": 0.0,
+      "seconds": 1.222,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-044",
+      "tp": 2,
+      "fp": 7,
+      "fn": 4,
+      "ted_accuracy": 0.0,
+      "seconds": 5.312,
+      "error": null
+    },
+    {
+      "id": "cord-test-045",
+      "tp": 9,
+      "fp": 11,
+      "fn": 6,
+      "ted_accuracy": 0.6585,
+      "seconds": 5.745,
+      "error": null
+    },
+    {
+      "id": "cord-test-046",
+      "tp": 11,
+      "fp": 1,
+      "fn": 2,
+      "ted_accuracy": 0.787,
+      "seconds": 4.779,
+      "error": null
+    },
+    {
+      "id": "cord-test-047",
+      "tp": 14,
+      "fp": 2,
+      "fn": 5,
+      "ted_accuracy": 0.7011,
+      "seconds": 5.849,
+      "error": null
+    },
+    {
+      "id": "cord-test-048",
+      "tp": 10,
+      "fp": 0,
+      "fn": 1,
+      "ted_accuracy": 0.8316,
+      "seconds": 4.448,
+      "error": null
+    },
+    {
+      "id": "cord-test-049",
+      "tp": 9,
+      "fp": 4,
+      "fn": 3,
+      "ted_accuracy": 0.8395,
+      "seconds": 4.39,
+      "error": null
+    },
+    {
+      "id": "cord-test-050",
+      "tp": 7,
+      "fp": 3,
+      "fn": 1,
+      "ted_accuracy": 0.0,
+      "seconds": 4.595,
+      "error": null
+    },
+    {
+      "id": "cord-test-051",
+      "tp": 8,
+      "fp": 6,
+      "fn": 11,
+      "ted_accuracy": 0.0,
+      "seconds": 5.894,
+      "error": null
+    },
+    {
+      "id": "cord-test-052",
+      "tp": 0,
+      "fp": 0,
+      "fn": 12,
+      "ted_accuracy": 0.0,
+      "seconds": 20.645,
+      "error": "truncated"
+    },
+    {
+      "id": "cord-test-053",
+      "tp": 6,
+      "fp": 7,
+      "fn": 8,
+      "ted_accuracy": 0.8482,
+      "seconds": 4.977,
+      "error": null
+    },
+    {
+      "id": "cord-test-054",
+      "tp": 5,
+      "fp": 2,
+      "fn": 0,
+      "ted_accuracy": 0.7447,
+      "seconds": 3.95,
+      "error": null
+    },
+    {
+      "id": "cord-test-055",
+      "tp": 8,
+      "fp": 2,
+      "fn": 0,
+      "ted_accuracy": 0.8182,
+      "seconds": 4.469,
+      "error": null
+    },
+    {
+      "id": "cord-test-056",
+      "tp": 7,
+      "fp": 1,
+      "fn": 0,
+      "ted_accuracy": 0.9057,
+      "seconds": 4.86,
+      "error": null
+    },
+    {
+      "id": "cord-test-057",
+      "tp": 5,
+      "fp": 6,
+      "fn": 0,
+      "ted_accuracy": 0.0952,
+      "seconds": 4.101,
+      "error": null
+    },
+    {
+      "id": "cord-test-058",
+      "tp": 0,
+      "fp": 0,
+      "fn": 9,
+      "ted_accuracy": 0.0,
+      "seconds": 0.984,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-059",
+      "tp": 0,
+      "fp": 0,
+      "fn": 32,
+      "ted_accuracy": 0.0,
+      "seconds": 1.683,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9857 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-060",
+      "tp": 4,
+      "fp": 7,
+      "fn": 7,
+      "ted_accuracy": 0.8175,
+      "seconds": 4.21,
+      "error": null
+    },
+    {
+      "id": "cord-test-061",
+      "tp": 5,
+      "fp": 12,
+      "fn": 26,
+      "ted_accuracy": 0.159,
+      "seconds": 5.577,
+      "error": null
+    },
+    {
+      "id": "cord-test-062",
+      "tp": 5,
+      "fp": 8,
+      "fn": 4,
+      "ted_accuracy": 0.7059,
+      "seconds": 4.778,
+      "error": null
+    },
+    {
+      "id": "cord-test-063",
+      "tp": 2,
+      "fp": 10,
+      "fn": 12,
+      "ted_accuracy": 0.5,
+      "seconds": 4.373,
+      "error": null
+    },
+    {
+      "id": "cord-test-064",
+      "tp": 1,
+      "fp": 7,
+      "fn": 4,
+      "ted_accuracy": 0.4444,
+      "seconds": 4.749,
+      "error": null
+    },
+    {
+      "id": "cord-test-065",
+      "tp": 3,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.8793,
+      "seconds": 4.332,
+      "error": null
+    },
+    {
+      "id": "cord-test-066",
+      "tp": 8,
+      "fp": 5,
+      "fn": 1,
+      "ted_accuracy": 0.6486,
+      "seconds": 4.676,
+      "error": null
+    },
+    {
+      "id": "cord-test-067",
+      "tp": 1,
+      "fp": 5,
+      "fn": 7,
+      "ted_accuracy": 0.7302,
+      "seconds": 3.354,
+      "error": null
+    },
+    {
+      "id": "cord-test-068",
+      "tp": 1,
+      "fp": 6,
+      "fn": 4,
+      "ted_accuracy": 0.575,
+      "seconds": 3.403,
+      "error": null
+    },
+    {
+      "id": "cord-test-069",
+      "tp": 0,
+      "fp": 0,
+      "fn": 12,
+      "ted_accuracy": 0.0,
+      "seconds": 1.128,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-070",
+      "tp": 31,
+      "fp": 11,
+      "fn": 12,
+      "ted_accuracy": 0.5905,
+      "seconds": 10.994,
+      "error": null
+    },
+    {
+      "id": "cord-test-071",
+      "tp": 1,
+      "fp": 8,
+      "fn": 6,
+      "ted_accuracy": 0.0,
+      "seconds": 5.834,
+      "error": null
+    },
+    {
+      "id": "cord-test-072",
+      "tp": 6,
+      "fp": 4,
+      "fn": 2,
+      "ted_accuracy": 0.0,
+      "seconds": 7.733,
+      "error": null
+    },
+    {
+      "id": "cord-test-073",
+      "tp": 4,
+      "fp": 10,
+      "fn": 8,
+      "ted_accuracy": 0.5169,
+      "seconds": 4.756,
+      "error": null
+    },
+    {
+      "id": "cord-test-074",
+      "tp": 0,
+      "fp": 0,
+      "fn": 20,
+      "ted_accuracy": 0.0,
+      "seconds": 1.347,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-075",
+      "tp": 21,
+      "fp": 7,
+      "fn": 0,
+      "ted_accuracy": 0.0,
+      "seconds": 13.813,
+      "error": null
+    },
+    {
+      "id": "cord-test-076",
+      "tp": 6,
+      "fp": 11,
+      "fn": 6,
+      "ted_accuracy": 0.5876,
+      "seconds": 5.675,
+      "error": null
+    },
+    {
+      "id": "cord-test-077",
+      "tp": 0,
+      "fp": 0,
+      "fn": 8,
+      "ted_accuracy": 0.0,
+      "seconds": 1.122,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-078",
+      "tp": 0,
+      "fp": 0,
+      "fn": 9,
+      "ted_accuracy": 0.0,
+      "seconds": 1.178,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-079",
+      "tp": 4,
+      "fp": 9,
+      "fn": 7,
+      "ted_accuracy": 0.0,
+      "seconds": 4.841,
+      "error": null
+    },
+    {
+      "id": "cord-test-080",
+      "tp": 4,
+      "fp": 7,
+      "fn": 5,
+      "ted_accuracy": 0.3485,
+      "seconds": 4.604,
+      "error": null
+    },
+    {
+      "id": "cord-test-081",
+      "tp": 0,
+      "fp": 0,
+      "fn": 14,
+      "ted_accuracy": 0.0,
+      "seconds": 1.131,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9922 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-082",
+      "tp": 16,
+      "fp": 0,
+      "fn": 0,
+      "ted_accuracy": 1.0,
+      "seconds": 5.196,
+      "error": null
+    },
+    {
+      "id": "cord-test-083",
+      "tp": 0,
+      "fp": 0,
+      "fn": 9,
+      "ted_accuracy": 0.0,
+      "seconds": 21.719,
+      "error": "truncated"
+    },
+    {
+      "id": "cord-test-084",
+      "tp": 7,
+      "fp": 4,
+      "fn": 5,
+      "ted_accuracy": 0.8614,
+      "seconds": 4.183,
+      "error": null
+    },
+    {
+      "id": "cord-test-085",
+      "tp": 0,
+      "fp": 0,
+      "fn": 40,
+      "ted_accuracy": 0.0,
+      "seconds": 0.973,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9912 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-086",
+      "tp": 0,
+      "fp": 0,
+      "fn": 12,
+      "ted_accuracy": 0.0,
+      "seconds": 29.162,
+      "error": "truncated"
+    },
+    {
+      "id": "cord-test-087",
+      "tp": 7,
+      "fp": 2,
+      "fn": 0,
+      "ted_accuracy": 0.0,
+      "seconds": 5.09,
+      "error": null
+    },
+    {
+      "id": "cord-test-088",
+      "tp": 10,
+      "fp": 3,
+      "fn": 2,
+      "ted_accuracy": 0.0,
+      "seconds": 5.505,
+      "error": null
+    },
+    {
+      "id": "cord-test-089",
+      "tp": 7,
+      "fp": 3,
+      "fn": 4,
+      "ted_accuracy": 0.75,
+      "seconds": 4.547,
+      "error": null
+    },
+    {
+      "id": "cord-test-090",
+      "tp": 7,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.0,
+      "seconds": 8.764,
+      "error": null
+    },
+    {
+      "id": "cord-test-091",
+      "tp": 3,
+      "fp": 11,
+      "fn": 6,
+      "ted_accuracy": 0.0,
+      "seconds": 4.834,
+      "error": null
+    },
+    {
+      "id": "cord-test-092",
+      "tp": 0,
+      "fp": 0,
+      "fn": 9,
+      "ted_accuracy": 0.0,
+      "seconds": 29.06,
+      "error": "truncated"
+    },
+    {
+      "id": "cord-test-093",
+      "tp": 6,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.0,
+      "seconds": 4.485,
+      "error": null
+    },
+    {
+      "id": "cord-test-094",
+      "tp": 15,
+      "fp": 9,
+      "fn": 2,
+      "ted_accuracy": 0.0,
+      "seconds": 8.907,
+      "error": null
+    },
+    {
+      "id": "cord-test-095",
+      "tp": 0,
+      "fp": 0,
+      "fn": 13,
+      "ted_accuracy": 0.0,
+      "seconds": 21.694,
+      "error": "truncated"
+    },
+    {
+      "id": "cord-test-096",
+      "tp": 7,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.7237,
+      "seconds": 4.867,
+      "error": null
+    },
+    {
+      "id": "cord-test-097",
+      "tp": 4,
+      "fp": 10,
+      "fn": 9,
+      "ted_accuracy": 0.6082,
+      "seconds": 4.46,
+      "error": null
+    },
+    {
+      "id": "cord-test-098",
+      "tp": 0,
+      "fp": 0,
+      "fn": 13,
+      "ted_accuracy": 0.0,
+      "seconds": 1.001,
+      "error": "ollama 400: {\"error\":\"{\\\"error\\\":{\\\"code\\\":400,\\\"message\\\":\\\"request (9938 tokens) exceeds the available context size (8192 tokens), try increasing it\\\",\\\"type\\\":\\\"exceed_context_size_error\\\",\\\"n_prompt_tokens\\\":"
+    },
+    {
+      "id": "cord-test-099",
+      "tp": 0,
+      "fp": 0,
+      "fn": 32,
+      "ted_accuracy": 0.0,
+      "seconds": 20.065,
+      "error": "truncated"
+    }
+  ],
+  "review": {
+    "documents_wrong": 98,
+    "documents_flagged": 37,
+    "wrong_caught": 0.3776,
+    "flagged_that_were_wrong": 1.0,
+    "table": {
+      "passed_wrong": 61,
+      "flagged_wrong": 37,
+      "passed_right": 2
+    },
+    "by_flag": {
+      "change_does_not_match": {
+        "wrong": 2
+      },
+      "items_do_not_sum_to_subtotal": {
+        "wrong": 9
+      },
+      "no_result": {
+        "wrong": 25
+      },
+      "no_total": {
+        "wrong": 2
+      }
+    },
+    "flags_on_gold_labels": {
+      "items_do_not_sum_to_subtotal": 5,
+      "no_total": 5,
+      "change_does_not_match": 3,
+      "items_do_not_sum_to_total": 1
+    }
+  }
+}

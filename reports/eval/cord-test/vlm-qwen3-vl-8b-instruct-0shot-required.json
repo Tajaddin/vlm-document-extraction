@@ -1,0 +1,1073 @@
+{
+  "run": "vlm-qwen3-vl-8b-instruct-0shot-required",
+  "kind": "receipt",
+  "prompt_version": "p2",
+  "config": {
+    "dataset": "cord",
+    "split": "test",
+    "approach": "vlm",
+    "model": "qwen3-vl:8b-instruct",
+    "shots": 0,
+    "receipt_schema": "required",
+    "num_ctx": 8192,
+    "max_output_tokens": 2048,
+    "temperature": 0,
+    "environment": {
+      "python": "3.12.12",
+      "os": "Windows-11",
+      "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+      "gpu": "NVIDIA GeForce RTX 4060, 8188 MiB",
+      "ollama": "0.32.5",
+      "placement": "19%/81% CPU/GPU"
+    }
+  },
+  "examples": [],
+  "document_ids": [
+    "cord-test-000",
+    "cord-test-001",
+    "cord-test-002",
+    "cord-test-003",
+    "cord-test-004",
+    "cord-test-005",
+    "cord-test-006",
+    "cord-test-007",
+    "cord-test-008",
+    "cord-test-009",
+    "cord-test-010",
+    "cord-test-011",
+    "cord-test-012",
+    "cord-test-013",
+    "cord-test-014",
+    "cord-test-015",
+    "cord-test-016",
+    "cord-test-017",
+    "cord-test-018",
+    "cord-test-019",
+    "cord-test-020",
+    "cord-test-021",
+    "cord-test-022",
+    "cord-test-023",
+    "cord-test-024",
+    "cord-test-025",
+    "cord-test-026",
+    "cord-test-027",
+    "cord-test-028",
+    "cord-test-029",
+    "cord-test-030",
+    "cord-test-031",
+    "cord-test-032",
+    "cord-test-033",
+    "cord-test-034",
+    "cord-test-035",
+    "cord-test-036",
+    "cord-test-037",
+    "cord-test-038",
+    "cord-test-039",
+    "cord-test-040",
+    "cord-test-041",
+    "cord-test-042",
+    "cord-test-043",
+    "cord-test-044",
+    "cord-test-045",
+    "cord-test-046",
+    "cord-test-047",
+    "cord-test-048",
+    "cord-test-049",
+    "cord-test-050",
+    "cord-test-051",
+    "cord-test-052",
+    "cord-test-053",
+    "cord-test-054",
+    "cord-test-055",
+    "cord-test-056",
+    "cord-test-057",
+    "cord-test-058",
+    "cord-test-059",
+    "cord-test-060",
+    "cord-test-061",
+    "cord-test-062",
+    "cord-test-063",
+    "cord-test-064",
+    "cord-test-065",
+    "cord-test-066",
+    "cord-test-067",
+    "cord-test-068",
+    "cord-test-069",
+    "cord-test-070",
+    "cord-test-071",
+    "cord-test-072",
+    "cord-test-073",
+    "cord-test-074",
+    "cord-test-075",
+    "cord-test-076",
+    "cord-test-077",
+    "cord-test-078",
+    "cord-test-079",
+    "cord-test-080",
+    "cord-test-081",
+    "cord-test-082",
+    "cord-test-083",
+    "cord-test-084",
+    "cord-test-085",
+    "cord-test-086",
+    "cord-test-087",
+    "cord-test-088",
+    "cord-test-089",
+    "cord-test-090",
+    "cord-test-091",
+    "cord-test-092",
+    "cord-test-093",
+    "cord-test-094",
+    "cord-test-095",
+    "cord-test-096",
+    "cord-test-097",
+    "cord-test-098",
+    "cord-test-099"
+  ],
+  "documents": 100,
+  "field_f1": 0.6804,
+  "field_f1_95ci": [
+    0.651,
+    0.7114
+  ],
+  "ted_accuracy": 0.7878,
+  "ted_accuracy_95ci": [
+    0.761,
+    0.8129
+  ],
+  "errors": {},
+  "latency": {
+    "first_document_s": 18.265,
+    "p50_s": 12.455,
+    "p95_s": 31.913,
+    "mean_s": 15.261,
+    "prompt_tokens_mean": 1864.2,
+    "completion_tokens_mean": 257.6
+  },
+  "per_document": [
+    {
+      "id": "cord-test-000",
+      "tp": 8,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.85,
+      "seconds": 18.265,
+      "error": null
+    },
+    {
+      "id": "cord-test-001",
+      "tp": 8,
+      "fp": 4,
+      "fn": 0,
+      "ted_accuracy": 0.6176,
+      "seconds": 13.489,
+      "error": null
+    },
+    {
+      "id": "cord-test-002",
+      "tp": 6,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.7473,
+      "seconds": 11.103,
+      "error": null
+    },
+    {
+      "id": "cord-test-003",
+      "tp": 7,
+      "fp": 2,
+      "fn": 1,
+      "ted_accuracy": 0.803,
+      "seconds": 8.613,
+      "error": null
+    },
+    {
+      "id": "cord-test-004",
+      "tp": 11,
+      "fp": 0,
+      "fn": 3,
+      "ted_accuracy": 0.9496,
+      "seconds": 11.843,
+      "error": null
+    },
+    {
+      "id": "cord-test-005",
+      "tp": 7,
+      "fp": 2,
+      "fn": 0,
+      "ted_accuracy": 0.8,
+      "seconds": 26.781,
+      "error": null
+    },
+    {
+      "id": "cord-test-006",
+      "tp": 8,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.7708,
+      "seconds": 13.758,
+      "error": null
+    },
+    {
+      "id": "cord-test-007",
+      "tp": 5,
+      "fp": 6,
+      "fn": 3,
+      "ted_accuracy": 0.625,
+      "seconds": 12.729,
+      "error": null
+    },
+    {
+      "id": "cord-test-008",
+      "tp": 11,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.9429,
+      "seconds": 13.567,
+      "error": null
+    },
+    {
+      "id": "cord-test-009",
+      "tp": 5,
+      "fp": 6,
+      "fn": 1,
+      "ted_accuracy": 0.7091,
+      "seconds": 10.424,
+      "error": null
+    },
+    {
+      "id": "cord-test-010",
+      "tp": 7,
+      "fp": 0,
+      "fn": 1,
+      "ted_accuracy": 0.9394,
+      "seconds": 10.151,
+      "error": null
+    },
+    {
+      "id": "cord-test-011",
+      "tp": 5,
+      "fp": 4,
+      "fn": 1,
+      "ted_accuracy": 0.6034,
+      "seconds": 10.154,
+      "error": null
+    },
+    {
+      "id": "cord-test-012",
+      "tp": 8,
+      "fp": 6,
+      "fn": 8,
+      "ted_accuracy": 0.5701,
+      "seconds": 12.831,
+      "error": null
+    },
+    {
+      "id": "cord-test-013",
+      "tp": 5,
+      "fp": 6,
+      "fn": 9,
+      "ted_accuracy": 0.84,
+      "seconds": 11.857,
+      "error": null
+    },
+    {
+      "id": "cord-test-014",
+      "tp": 17,
+      "fp": 8,
+      "fn": 8,
+      "ted_accuracy": 0.6814,
+      "seconds": 37.318,
+      "error": null
+    },
+    {
+      "id": "cord-test-015",
+      "tp": 7,
+      "fp": 3,
+      "fn": 2,
+      "ted_accuracy": 0.6479,
+      "seconds": 12.273,
+      "error": null
+    },
+    {
+      "id": "cord-test-016",
+      "tp": 7,
+      "fp": 8,
+      "fn": 14,
+      "ted_accuracy": 0.7727,
+      "seconds": 17.28,
+      "error": null
+    },
+    {
+      "id": "cord-test-017",
+      "tp": 13,
+      "fp": 3,
+      "fn": 9,
+      "ted_accuracy": 0.8454,
+      "seconds": 21.888,
+      "error": null
+    },
+    {
+      "id": "cord-test-018",
+      "tp": 6,
+      "fp": 1,
+      "fn": 1,
+      "ted_accuracy": 0.7963,
+      "seconds": 9.665,
+      "error": null
+    },
+    {
+      "id": "cord-test-019",
+      "tp": 7,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.8667,
+      "seconds": 12.761,
+      "error": null
+    },
+    {
+      "id": "cord-test-020",
+      "tp": 14,
+      "fp": 2,
+      "fn": 5,
+      "ted_accuracy": 0.8616,
+      "seconds": 17.769,
+      "error": null
+    },
+    {
+      "id": "cord-test-021",
+      "tp": 4,
+      "fp": 5,
+      "fn": 7,
+      "ted_accuracy": 0.9109,
+      "seconds": 12.455,
+      "error": null
+    },
+    {
+      "id": "cord-test-022",
+      "tp": 5,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.7938,
+      "seconds": 14.0,
+      "error": null
+    },
+    {
+      "id": "cord-test-023",
+      "tp": 7,
+      "fp": 3,
+      "fn": 2,
+      "ted_accuracy": 0.8382,
+      "seconds": 12.435,
+      "error": null
+    },
+    {
+      "id": "cord-test-024",
+      "tp": 6,
+      "fp": 9,
+      "fn": 9,
+      "ted_accuracy": 0.8101,
+      "seconds": 14.094,
+      "error": null
+    },
+    {
+      "id": "cord-test-025",
+      "tp": 9,
+      "fp": 1,
+      "fn": 3,
+      "ted_accuracy": 0.8636,
+      "seconds": 15.152,
+      "error": null
+    },
+    {
+      "id": "cord-test-026",
+      "tp": 9,
+      "fp": 7,
+      "fn": 9,
+      "ted_accuracy": 0.6188,
+      "seconds": 14.892,
+      "error": null
+    },
+    {
+      "id": "cord-test-027",
+      "tp": 8,
+      "fp": 1,
+      "fn": 1,
+      "ted_accuracy": 0.8356,
+      "seconds": 13.071,
+      "error": null
+    },
+    {
+      "id": "cord-test-028",
+      "tp": 11,
+      "fp": 0,
+      "fn": 3,
+      "ted_accuracy": 0.9406,
+      "seconds": 17.862,
+      "error": null
+    },
+    {
+      "id": "cord-test-029",
+      "tp": 16,
+      "fp": 4,
+      "fn": 12,
+      "ted_accuracy": 0.7911,
+      "seconds": 23.49,
+      "error": null
+    },
+    {
+      "id": "cord-test-030",
+      "tp": 5,
+      "fp": 1,
+      "fn": 2,
+      "ted_accuracy": 0.6545,
+      "seconds": 8.641,
+      "error": null
+    },
+    {
+      "id": "cord-test-031",
+      "tp": 5,
+      "fp": 4,
+      "fn": 6,
+      "ted_accuracy": 0.6023,
+      "seconds": 28.479,
+      "error": null
+    },
+    {
+      "id": "cord-test-032",
+      "tp": 7,
+      "fp": 0,
+      "fn": 1,
+      "ted_accuracy": 0.9718,
+      "seconds": 26.241,
+      "error": null
+    },
+    {
+      "id": "cord-test-033",
+      "tp": 10,
+      "fp": 1,
+      "fn": 4,
+      "ted_accuracy": 0.807,
+      "seconds": 14.704,
+      "error": null
+    },
+    {
+      "id": "cord-test-034",
+      "tp": 8,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.9684,
+      "seconds": 12.769,
+      "error": null
+    },
+    {
+      "id": "cord-test-035",
+      "tp": 11,
+      "fp": 5,
+      "fn": 4,
+      "ted_accuracy": 0.9008,
+      "seconds": 16.18,
+      "error": null
+    },
+    {
+      "id": "cord-test-036",
+      "tp": 9,
+      "fp": 1,
+      "fn": 2,
+      "ted_accuracy": 0.925,
+      "seconds": 28.38,
+      "error": null
+    },
+    {
+      "id": "cord-test-037",
+      "tp": 4,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.7059,
+      "seconds": 10.131,
+      "error": null
+    },
+    {
+      "id": "cord-test-038",
+      "tp": 21,
+      "fp": 3,
+      "fn": 11,
+      "ted_accuracy": 0.8929,
+      "seconds": 44.104,
+      "error": null
+    },
+    {
+      "id": "cord-test-039",
+      "tp": 7,
+      "fp": 9,
+      "fn": 14,
+      "ted_accuracy": 0.6532,
+      "seconds": 19.428,
+      "error": null
+    },
+    {
+      "id": "cord-test-040",
+      "tp": 7,
+      "fp": 6,
+      "fn": 4,
+      "ted_accuracy": 0.8733,
+      "seconds": 14.263,
+      "error": null
+    },
+    {
+      "id": "cord-test-041",
+      "tp": 22,
+      "fp": 11,
+      "fn": 1,
+      "ted_accuracy": 0.712,
+      "seconds": 38.358,
+      "error": null
+    },
+    {
+      "id": "cord-test-042",
+      "tp": 6,
+      "fp": 5,
+      "fn": 3,
+      "ted_accuracy": 0.7101,
+      "seconds": 26.349,
+      "error": null
+    },
+    {
+      "id": "cord-test-043",
+      "tp": 2,
+      "fp": 6,
+      "fn": 8,
+      "ted_accuracy": 0.75,
+      "seconds": 29.489,
+      "error": null
+    },
+    {
+      "id": "cord-test-044",
+      "tp": 5,
+      "fp": 2,
+      "fn": 1,
+      "ted_accuracy": 0.7619,
+      "seconds": 10.43,
+      "error": null
+    },
+    {
+      "id": "cord-test-045",
+      "tp": 10,
+      "fp": 6,
+      "fn": 5,
+      "ted_accuracy": 0.6667,
+      "seconds": 15.77,
+      "error": null
+    },
+    {
+      "id": "cord-test-046",
+      "tp": 11,
+      "fp": 3,
+      "fn": 2,
+      "ted_accuracy": 0.7593,
+      "seconds": 13.267,
+      "error": null
+    },
+    {
+      "id": "cord-test-047",
+      "tp": 13,
+      "fp": 2,
+      "fn": 6,
+      "ted_accuracy": 0.6739,
+      "seconds": 15.633,
+      "error": null
+    },
+    {
+      "id": "cord-test-048",
+      "tp": 8,
+      "fp": 5,
+      "fn": 3,
+      "ted_accuracy": 0.8316,
+      "seconds": 12.748,
+      "error": null
+    },
+    {
+      "id": "cord-test-049",
+      "tp": 9,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.963,
+      "seconds": 11.663,
+      "error": null
+    },
+    {
+      "id": "cord-test-050",
+      "tp": 5,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.8235,
+      "seconds": 9.093,
+      "error": null
+    },
+    {
+      "id": "cord-test-051",
+      "tp": 11,
+      "fp": 3,
+      "fn": 8,
+      "ted_accuracy": 0.828,
+      "seconds": 15.692,
+      "error": null
+    },
+    {
+      "id": "cord-test-052",
+      "tp": 10,
+      "fp": 0,
+      "fn": 2,
+      "ted_accuracy": 0.9592,
+      "seconds": 10.24,
+      "error": null
+    },
+    {
+      "id": "cord-test-053",
+      "tp": 10,
+      "fp": 0,
+      "fn": 4,
+      "ted_accuracy": 0.9286,
+      "seconds": 11.988,
+      "error": null
+    },
+    {
+      "id": "cord-test-054",
+      "tp": 5,
+      "fp": 2,
+      "fn": 0,
+      "ted_accuracy": 0.6809,
+      "seconds": 8.675,
+      "error": null
+    },
+    {
+      "id": "cord-test-055",
+      "tp": 6,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.8052,
+      "seconds": 9.734,
+      "error": null
+    },
+    {
+      "id": "cord-test-056",
+      "tp": 1,
+      "fp": 6,
+      "fn": 6,
+      "ted_accuracy": 0.8679,
+      "seconds": 11.664,
+      "error": null
+    },
+    {
+      "id": "cord-test-057",
+      "tp": 2,
+      "fp": 7,
+      "fn": 3,
+      "ted_accuracy": 0.2857,
+      "seconds": 9.705,
+      "error": null
+    },
+    {
+      "id": "cord-test-058",
+      "tp": 6,
+      "fp": 4,
+      "fn": 3,
+      "ted_accuracy": 0.7059,
+      "seconds": 23.179,
+      "error": null
+    },
+    {
+      "id": "cord-test-059",
+      "tp": 22,
+      "fp": 10,
+      "fn": 10,
+      "ted_accuracy": 0.958,
+      "seconds": 39.207,
+      "error": null
+    },
+    {
+      "id": "cord-test-060",
+      "tp": 9,
+      "fp": 3,
+      "fn": 2,
+      "ted_accuracy": 0.9524,
+      "seconds": 10.452,
+      "error": null
+    },
+    {
+      "id": "cord-test-061",
+      "tp": 23,
+      "fp": 14,
+      "fn": 8,
+      "ted_accuracy": 0.7538,
+      "seconds": 19.634,
+      "error": null
+    },
+    {
+      "id": "cord-test-062",
+      "tp": 6,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.7647,
+      "seconds": 9.881,
+      "error": null
+    },
+    {
+      "id": "cord-test-063",
+      "tp": 11,
+      "fp": 5,
+      "fn": 3,
+      "ted_accuracy": 0.5896,
+      "seconds": 12.344,
+      "error": null
+    },
+    {
+      "id": "cord-test-064",
+      "tp": 5,
+      "fp": 3,
+      "fn": 0,
+      "ted_accuracy": 0.4667,
+      "seconds": 11.625,
+      "error": null
+    },
+    {
+      "id": "cord-test-065",
+      "tp": 4,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.8966,
+      "seconds": 10.332,
+      "error": null
+    },
+    {
+      "id": "cord-test-066",
+      "tp": 8,
+      "fp": 6,
+      "fn": 1,
+      "ted_accuracy": 0.7432,
+      "seconds": 11.405,
+      "error": null
+    },
+    {
+      "id": "cord-test-067",
+      "tp": 6,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.6508,
+      "seconds": 9.189,
+      "error": null
+    },
+    {
+      "id": "cord-test-068",
+      "tp": 4,
+      "fp": 3,
+      "fn": 1,
+      "ted_accuracy": 0.6,
+      "seconds": 7.921,
+      "error": null
+    },
+    {
+      "id": "cord-test-069",
+      "tp": 8,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.9664,
+      "seconds": 24.078,
+      "error": null
+    },
+    {
+      "id": "cord-test-070",
+      "tp": 21,
+      "fp": 12,
+      "fn": 22,
+      "ted_accuracy": 0.6379,
+      "seconds": 21.743,
+      "error": null
+    },
+    {
+      "id": "cord-test-071",
+      "tp": 4,
+      "fp": 3,
+      "fn": 3,
+      "ted_accuracy": 0.7321,
+      "seconds": 8.114,
+      "error": null
+    },
+    {
+      "id": "cord-test-072",
+      "tp": 7,
+      "fp": 0,
+      "fn": 1,
+      "ted_accuracy": 0.9667,
+      "seconds": 7.666,
+      "error": null
+    },
+    {
+      "id": "cord-test-073",
+      "tp": 10,
+      "fp": 4,
+      "fn": 2,
+      "ted_accuracy": 0.764,
+      "seconds": 8.939,
+      "error": null
+    },
+    {
+      "id": "cord-test-074",
+      "tp": 11,
+      "fp": 16,
+      "fn": 9,
+      "ted_accuracy": 0.6,
+      "seconds": 31.312,
+      "error": null
+    },
+    {
+      "id": "cord-test-075",
+      "tp": 15,
+      "fp": 0,
+      "fn": 6,
+      "ted_accuracy": 0.9388,
+      "seconds": 15.043,
+      "error": null
+    },
+    {
+      "id": "cord-test-076",
+      "tp": 8,
+      "fp": 7,
+      "fn": 4,
+      "ted_accuracy": 0.4536,
+      "seconds": 13.354,
+      "error": null
+    },
+    {
+      "id": "cord-test-077",
+      "tp": 7,
+      "fp": 0,
+      "fn": 1,
+      "ted_accuracy": 0.9394,
+      "seconds": 20.355,
+      "error": null
+    },
+    {
+      "id": "cord-test-078",
+      "tp": 5,
+      "fp": 9,
+      "fn": 4,
+      "ted_accuracy": 0.5,
+      "seconds": 22.564,
+      "error": null
+    },
+    {
+      "id": "cord-test-079",
+      "tp": 9,
+      "fp": 4,
+      "fn": 2,
+      "ted_accuracy": 0.747,
+      "seconds": 8.73,
+      "error": null
+    },
+    {
+      "id": "cord-test-080",
+      "tp": 7,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.9242,
+      "seconds": 9.44,
+      "error": null
+    },
+    {
+      "id": "cord-test-081",
+      "tp": 10,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.8291,
+      "seconds": 23.265,
+      "error": null
+    },
+    {
+      "id": "cord-test-082",
+      "tp": 16,
+      "fp": 2,
+      "fn": 0,
+      "ted_accuracy": 0.9735,
+      "seconds": 10.96,
+      "error": null
+    },
+    {
+      "id": "cord-test-083",
+      "tp": 5,
+      "fp": 2,
+      "fn": 4,
+      "ted_accuracy": 0.9118,
+      "seconds": 8.26,
+      "error": null
+    },
+    {
+      "id": "cord-test-084",
+      "tp": 7,
+      "fp": 6,
+      "fn": 5,
+      "ted_accuracy": 0.7327,
+      "seconds": 9.611,
+      "error": null
+    },
+    {
+      "id": "cord-test-085",
+      "tp": 26,
+      "fp": 12,
+      "fn": 14,
+      "ted_accuracy": 0.8754,
+      "seconds": 37.616,
+      "error": null
+    },
+    {
+      "id": "cord-test-086",
+      "tp": 9,
+      "fp": 1,
+      "fn": 3,
+      "ted_accuracy": 0.9211,
+      "seconds": 9.0,
+      "error": null
+    },
+    {
+      "id": "cord-test-087",
+      "tp": 5,
+      "fp": 2,
+      "fn": 2,
+      "ted_accuracy": 0.8333,
+      "seconds": 7.916,
+      "error": null
+    },
+    {
+      "id": "cord-test-088",
+      "tp": 10,
+      "fp": 0,
+      "fn": 2,
+      "ted_accuracy": 0.9192,
+      "seconds": 8.976,
+      "error": null
+    },
+    {
+      "id": "cord-test-089",
+      "tp": 7,
+      "fp": 2,
+      "fn": 4,
+      "ted_accuracy": 0.881,
+      "seconds": 9.163,
+      "error": null
+    },
+    {
+      "id": "cord-test-090",
+      "tp": 7,
+      "fp": 1,
+      "fn": 2,
+      "ted_accuracy": 0.9508,
+      "seconds": 9.398,
+      "error": null
+    },
+    {
+      "id": "cord-test-091",
+      "tp": 6,
+      "fp": 4,
+      "fn": 3,
+      "ted_accuracy": 0.619,
+      "seconds": 8.915,
+      "error": null
+    },
+    {
+      "id": "cord-test-092",
+      "tp": 3,
+      "fp": 6,
+      "fn": 6,
+      "ted_accuracy": 0.5946,
+      "seconds": 7.82,
+      "error": null
+    },
+    {
+      "id": "cord-test-093",
+      "tp": 7,
+      "fp": 1,
+      "fn": 1,
+      "ted_accuracy": 0.9062,
+      "seconds": 7.726,
+      "error": null
+    },
+    {
+      "id": "cord-test-094",
+      "tp": 11,
+      "fp": 2,
+      "fn": 6,
+      "ted_accuracy": 0.8417,
+      "seconds": 12.002,
+      "error": null
+    },
+    {
+      "id": "cord-test-095",
+      "tp": 10,
+      "fp": 2,
+      "fn": 3,
+      "ted_accuracy": 0.8977,
+      "seconds": 9.366,
+      "error": null
+    },
+    {
+      "id": "cord-test-096",
+      "tp": 8,
+      "fp": 1,
+      "fn": 3,
+      "ted_accuracy": 0.8947,
+      "seconds": 8.971,
+      "error": null
+    },
+    {
+      "id": "cord-test-097",
+      "tp": 10,
+      "fp": 1,
+      "fn": 3,
+      "ted_accuracy": 0.9381,
+      "seconds": 9.62,
+      "error": null
+    },
+    {
+      "id": "cord-test-098",
+      "tp": 9,
+      "fp": 4,
+      "fn": 4,
+      "ted_accuracy": 0.7984,
+      "seconds": 24.526,
+      "error": null
+    },
+    {
+      "id": "cord-test-099",
+      "tp": 14,
+      "fp": 10,
+      "fn": 18,
+      "ted_accuracy": 0.6073,
+      "seconds": 13.702,
+      "error": null
+    }
+  ],
+  "review": {
+    "documents_wrong": 100,
+    "documents_flagged": 11,
+    "wrong_caught": 0.11,
+    "flagged_that_were_wrong": 1.0,
+    "table": {
+      "passed_wrong": 89,
+      "flagged_wrong": 11
+    },
+    "by_flag": {
+      "change_does_not_match": {
+        "wrong": 6
+      },
+      "items_do_not_sum_to_subtotal": {
+        "wrong": 5
+      }
+    },
+    "flags_on_gold_labels": {
+      "items_do_not_sum_to_subtotal": 5,
+      "no_total": 5,
+      "change_does_not_match": 3,
+      "items_do_not_sum_to_total": 1
+    }
+  }
+}
