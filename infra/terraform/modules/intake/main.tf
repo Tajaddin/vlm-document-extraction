@@ -2,6 +2,7 @@
 # The GPU worker that consumes the queue runs outside AWS; `aws_iam_policy.worker` is what its identity needs.
 
 terraform {
+  required_version = ">= 1.9"
   required_providers {
     aws     = { source = "hashicorp/aws", version = "~> 6.69.0" }
     archive = { source = "hashicorp/archive", version = "~> 2.8" }
@@ -9,7 +10,6 @@ terraform {
 }
 
 data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
 
 locals {
   functions = {
@@ -33,10 +33,17 @@ resource "aws_s3_bucket_public_access_block" "documents" {
   restrict_public_buckets = true
 }
 
+# SSE-S3 by default; set kms_key_arn for a customer-managed key (about $1 a month plus requests). Documents expire
+# after job_ttl_days, so the default is an accepted exception to trivy's AVD-AWS-0132, not an oversight.
+#trivy:ignore:AVD-AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "documents" {
   bucket = aws_s3_bucket.documents.id
   rule {
-    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = var.kms_key_arn == "" ? "AES256" : "aws:kms"
+      kms_master_key_id = var.kms_key_arn == "" ? null : var.kms_key_arn
+    }
+    bucket_key_enabled = var.kms_key_arn != ""
   }
 }
 

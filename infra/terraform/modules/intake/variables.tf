@@ -70,3 +70,9 @@ variable "alarm_topic_arn" {
   type        = string
   default     = ""
 }
+
+variable "kms_key_arn" {
+  description = "Customer-managed KMS key for the document bucket; empty = SSE-S3 (AWS-managed keys)"
+  type        = string
+  default     = ""
+}
