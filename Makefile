@@ -1,4 +1,4 @@
-.PHONY: help install lint format typecheck test test-data check secret-scan fetch verify data-report dev-runs test-runs summarize metrics-check backlog
+.PHONY: help install lint format typecheck test test-data check secret-scan fetch verify data-report dev-runs test-runs summarize metrics-check backlog \n        lambdas up infra-up infra-down test-integration load alerts-test worker-up
 
 help:               ## this list
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/'
@@ -49,3 +49,27 @@ summarize:
 
 backlog:            ## issues, milestones and the board on GitHub from docs/agile/backlog.json
 	uv run python scripts/agile/sync_backlog.py --board && uv run python scripts/agile/board.py sprints
+
+lambdas:            ## typecheck, lint, test and bundle the TypeScript Lambdas
+	cd lambdas && npm ci && npm run typecheck && npm run lint && npm test && npm run build
+
+up:                 ## the Floci AWS emulator
+	docker compose up -d --wait floci
+
+infra-up: lambdas   ## Terraform on Floci: API Gateway, Lambdas, S3, SQS (+ DLQ), DynamoDB
+	terraform -chdir=infra/terraform/envs/floci init -input=false && terraform -chdir=infra/terraform/envs/floci apply -auto-approve -input=false
+
+infra-down:
+	terraform -chdir=infra/terraform/envs/floci destroy -auto-approve -input=false
+
+test-integration:   ## worker against Floci (Testcontainers) and the deployed stack end to end
+	AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test uv run pytest -m integration -v
+
+worker-up:          ## the worker in Docker, reading the queue the Terraform created
+	VDE_QUEUE_URL=$$(terraform -chdir=infra/terraform/envs/floci output -raw queue_url) 	VDE_BUCKET=$$(terraform -chdir=infra/terraform/envs/floci output -raw bucket) 	docker compose --profile worker up -d --build worker
+
+load:               ## k6 on the emulated intake at 5, 10, 20 and 40 requests/s (reports/load/)
+	bash scripts/load.sh 5,10,20,40 60
+
+alerts-test:        ## promtool unit tests for the alert rules
+	docker run --rm -v "$(CURDIR)/observability:/w" -w /w --entrypoint promtool prom/prometheus:v3.5.0 test rules alerts_test.yml
