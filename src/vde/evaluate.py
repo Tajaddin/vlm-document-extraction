@@ -163,7 +163,20 @@ def score_invoices(docs: Sequence[Document], rows: Sequence[dict[str, Any]]) -> 
     }
 
 
-def environment(ollama_url: str | None) -> dict[str, Any]:
+def placement(ollama_url: str, model: str) -> str | None:
+    """Where Ollama has the model loaded: '100% GPU', or a CPU/GPU split when it did not fit in VRAM (which slows it
+    down). Read right after a run, while the model is still loaded."""
+    try:
+        for m in httpx.get(f"{ollama_url}/api/ps", timeout=5).json().get("models", []):
+            if m.get("name") == model and m.get("size"):
+                gpu = round(100 * m.get("size_vram", 0) / m["size"])
+                return "100% GPU" if gpu >= 100 else f"{100 - gpu}%/{gpu}% CPU/GPU"
+    except (httpx.HTTPError, ValueError):
+        return None
+    return None
+
+
+def environment(ollama_url: str | None, model: str | None = None) -> dict[str, Any]:
     env: dict[str, Any] = {
         "python": platform.python_version(),
         "os": platform.platform(terse=True),
@@ -185,6 +198,8 @@ def environment(ollama_url: str | None) -> dict[str, Any]:
             env["ollama"] = httpx.get(f"{ollama_url}/api/version", timeout=5).json().get("version")
         except (httpx.HTTPError, ValueError):
             env["ollama"] = None
+        if model:
+            env["placement"] = placement(ollama_url, model)
     return env
 
 

@@ -155,7 +155,7 @@ def evaluate(
         "num_ctx": s.num_ctx,
         "max_output_tokens": s.max_output_tokens,
         "temperature": 0,
-        "environment": ev.environment(s.ollama_url if approach != "fake" else None),
+        "environment": ev.environment(s.ollama_url if approach in ("vlm", "ocr") else None, model),
     }
     result = ev.report(run_name, docs, rows, config, shown)
     (folder / f"{run_name}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8", newline="\n")

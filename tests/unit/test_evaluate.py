@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 
+import httpx
 import pytest
+import respx
 
 from vde import evaluate
 from vde.documents import Document
@@ -87,3 +89,16 @@ def test_review_flags_are_scored_against_wrong_extractions(tmp_path: Path) -> No
     assert r["wrong_caught"] == 0.5 and r["flagged_that_were_wrong"] == 1.0
     assert r["by_flag"] == {"no_invoice_number": {"wrong": 1}}
     assert r["flags_on_gold_labels"] == {}
+
+
+@respx.mock
+def test_placement_reads_where_ollama_loaded_the_model() -> None:
+    respx.get("http://ollama.test/api/ps").mock(
+        return_value=httpx.Response(
+            200,
+            json={"models": [{"name": "m", "size": 100, "size_vram": 81}, {"name": "n", "size": 10, "size_vram": 10}]},
+        )
+    )
+    assert evaluate.placement("http://ollama.test", "m") == "19%/81% CPU/GPU"
+    assert evaluate.placement("http://ollama.test", "n") == "100% GPU"
+    assert evaluate.placement("http://ollama.test", "absent") is None
