@@ -49,7 +49,7 @@ def run(extractor: Extractor, docs: Sequence[Document], predictions: Path) -> li
             if doc.id in done:
                 continue
             result = extractor.extract(doc)
-            row = {"id": doc.id, "order": i, **result.as_dict()}
+            row = {"id": doc.id, "order": i, "prompt_version": prompts.VERSION, **result.as_dict()}
             out.write(json.dumps(row, ensure_ascii=False) + "\n")
             out.flush()
             done[doc.id] = row
@@ -232,6 +232,12 @@ def review(
     }
 
 
+def _prompt_versions(rows: Sequence[dict[str, Any]]) -> str | list[str]:
+    """The prompt version(s) the predictions were made with, from the rows themselves."""
+    versions = sorted({str(r.get("prompt_version", "unrecorded")) for r in rows})
+    return versions[0] if len(versions) == 1 else versions
+
+
 def report(
     name: str,
     docs: Sequence[Document],
@@ -244,7 +250,7 @@ def report(
     return {
         "run": name,
         "kind": kind,
-        "prompt_version": prompts.VERSION,
+        "prompt_version": _prompt_versions(rows),
         "config": config,
         "examples": [e.id for e in examples],
         "document_ids": [d.id for d in docs],
