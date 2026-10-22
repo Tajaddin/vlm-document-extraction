@@ -1,0 +1,65 @@
+# Alerts on the GPU worker. Each has a runbook entry (docs/RUNBOOK.md) and promtool unit tests (alerts_test.yml).
+# The AWS side has its own CloudWatch alarms in Terraform (dead letters, queue age, function errors).
+groups:
+  - name: vde-worker
+    rules:
+      - alert: WorkerDown
+        expr: up{job="worker"} == 0
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: The extraction worker is not answering
+          description: Queued documents are not being extracted.
+          runbook: docs/RUNBOOK.md#workerdown
+
+      - alert: WorkerNotPolling
+        # the process answers but its poll loop has stopped (hung on a model call, or crashed in the loop)
+        expr: time() - vde_worker_last_poll_timestamp_seconds > 600
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: The worker has not polled the queue for 10 minutes
+          description: The process is up but its loop is stuck.
+          runbook: docs/RUNBOOK.md#workernotpolling
+
+      - alert: QueueBacklog
+        expr: vde_worker_queue_messages{state="waiting"} > 50
+        for: 15m
+        labels: { severity: ticket }
+        annotations:
+          summary: Over 50 documents have waited for 15 minutes
+          description: Arrivals outpace the worker; add a worker or a faster model.
+          runbook: docs/RUNBOOK.md#queuebacklog
+
+      - alert: ExtractionFailing
+        expr: |
+          sum(rate(vde_worker_jobs_total{outcome=~"failed|retry"}[15m]))
+            / sum(rate(vde_worker_jobs_total[15m])) > 0.1
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: Over 10% of extractions are failing
+          description: Failed jobs end in the dead-letter queue after their retries.
+          runbook: docs/RUNBOOK.md#extractionfailing
+
+      - alert: ReviewRateHigh
+        # on the test sets the flags fire on a known share of documents (reports/eval); far above that means drift
+        expr: |
+          sum by (kind) (rate(vde_worker_flagged_jobs_total[1h]))
+            / sum by (kind) (rate(vde_worker_jobs_total{outcome="done"}[1h])) > 0.5
+        for: 30m
+        labels: { severity: ticket }
+        annotations:
+          summary: Over half of {{ $labels.kind }} extractions are flagged for review
+          description: New layouts or a degraded model; sample the flagged jobs.
+          runbook: docs/RUNBOOK.md#reviewratehigh
+
+      - alert: ExtractionSlow
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(vde_worker_extraction_seconds_bucket[15m]))) > 30
+        for: 15m
+        labels: { severity: ticket }
+        annotations:
+          summary: p95 extraction time is over 30 seconds
+          description: The model may be running on the CPU (VRAM taken by something else) or answers are padding.
+          runbook: docs/RUNBOOK.md#extractionslow

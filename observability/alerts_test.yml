@@ -1,0 +1,138 @@
+rule_files:
+  - alert_rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  - name: a worker that stops answering pages after two minutes
+    interval: 1m
+    input_series:
+      - series: up{job="worker", instance="worker:9108"}
+        values: "1 1 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: WorkerDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: WorkerDown
+        exp_alerts:
+          - exp_labels: { severity: page, job: worker, instance: "worker:9108" }
+            exp_annotations:
+              summary: The extraction worker is not answering
+              description: Queued documents are not being extracted.
+              runbook: docs/RUNBOOK.md#workerdown
+
+  - name: a stuck poll loop pages; a polling worker does not
+    interval: 1m
+    input_series:
+      # polled at t=0, then never again
+      - series: vde_worker_last_poll_timestamp_seconds{job="worker"}
+        values: "0+0x20"
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: WorkerNotPolling
+        exp_alerts: []
+      - eval_time: 13m
+        alertname: WorkerNotPolling
+        exp_alerts:
+          - exp_labels: { severity: page, job: worker }
+            exp_annotations:
+              summary: The worker has not polled the queue for 10 minutes
+              description: The process is up but its loop is stuck.
+              runbook: docs/RUNBOOK.md#workernotpolling
+
+  - name: a short burst is not a backlog
+    interval: 1m
+    input_series:
+      - series: vde_worker_queue_messages{job="worker", state="waiting"}
+        values: "80 80 80 80 80 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 19m
+        alertname: QueueBacklog
+        exp_alerts: []
+
+  - name: a sustained backlog opens a ticket
+    interval: 1m
+    input_series:
+      - series: vde_worker_queue_messages{job="worker", state="waiting"}
+        values: "60+1x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: QueueBacklog
+        exp_alerts:
+          - exp_labels: { severity: ticket, job: worker, state: waiting }
+            exp_annotations:
+              summary: Over 50 documents have waited for 15 minutes
+              description: Arrivals outpace the worker; add a worker or a faster model.
+              runbook: docs/RUNBOOK.md#queuebacklog
+
+  - name: one failure in five pages, one in fifty does not
+    interval: 1m
+    input_series:
+      - series: vde_worker_jobs_total{job="worker", kind="invoice", outcome="done"}
+        values: "0+4x40"
+      - series: vde_worker_jobs_total{job="worker", kind="invoice", outcome="failed"}
+        values: "0+1x40"
+      - series: vde_worker_jobs_total{job="worker", kind="receipt", outcome="done"}
+        values: "0+49x40"
+      - series: vde_worker_jobs_total{job="worker", kind="receipt", outcome="retry"}
+        values: "0+0x40"
+    alert_rule_test:
+      # (1) / (4 + 1 + 49) = 1.9%: below 10%
+      - eval_time: 30m
+        alertname: ExtractionFailing
+        exp_alerts: []
+
+  - name: a failing model pages
+    interval: 1m
+    input_series:
+      - series: vde_worker_jobs_total{job="worker", kind="invoice", outcome="done"}
+        values: "0+4x40"
+      - series: vde_worker_jobs_total{job="worker", kind="invoice", outcome="retry"}
+        values: "0+1x40"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: ExtractionFailing
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: Over 10% of extractions are failing
+              description: Failed jobs end in the dead-letter queue after their retries.
+              runbook: docs/RUNBOOK.md#extractionfailing
+
+  - name: most invoices flagged for an hour opens a ticket
+    interval: 5m
+    input_series:
+      - series: vde_worker_jobs_total{job="worker", kind="invoice", outcome="done"}
+        values: "0+10x30"
+      - series: vde_worker_flagged_jobs_total{job="worker", kind="invoice"}
+        values: "0+7x30"
+    alert_rule_test:
+      - eval_time: 120m
+        alertname: ReviewRateHigh
+        exp_alerts:
+          - exp_labels: { severity: ticket, kind: invoice }
+            exp_annotations:
+              summary: Over half of invoice extractions are flagged for review
+              description: New layouts or a degraded model; sample the flagged jobs.
+              runbook: docs/RUNBOOK.md#reviewratehigh
+
+  - name: slow extractions open a ticket
+    interval: 1m
+    input_series:
+      # every extraction lands in the 64 s bucket
+      - series: vde_worker_extraction_seconds_bucket{job="worker", kind="invoice", le="32"}
+        values: "0+0x40"
+      - series: vde_worker_extraction_seconds_bucket{job="worker", kind="invoice", le="64"}
+        values: "0+2x40"
+      - series: vde_worker_extraction_seconds_bucket{job="worker", kind="invoice", le="+Inf"}
+        values: "0+2x40"
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: ExtractionSlow
+        exp_alerts:
+          - exp_labels: { severity: ticket }
+            exp_annotations:
+              summary: p95 extraction time is over 30 seconds
+              description: The model may be running on the CPU (VRAM taken by something else) or answers are padding.
+              runbook: docs/RUNBOOK.md#extractionslow
