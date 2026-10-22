@@ -116,7 +116,7 @@ def evaluate(
     s = settings()
     docs = documents(dataset, split, limit)  # type: ignore[arg-type]
     shown = examples(dataset, shots, {d.id for d in docs})  # type: ignore[arg-type]
-    client = Ollama(s.ollama_url, s.request_timeout_s, s.num_ctx)
+    client = Ollama(s.ollama_url, s.request_timeout_s, s.num_ctx, s.max_output_tokens)
     if approach == "vlm":
         model = model or s.vlm_model
         extractor: ev.Extractor = VisionExtractor(client, model, shown, variant)  # type: ignore[arg-type]
@@ -145,6 +145,7 @@ def evaluate(
         "shots": shots,
         "receipt_schema": variant if dataset == "cord" else None,
         "num_ctx": s.num_ctx,
+        "max_output_tokens": s.max_output_tokens,
         "temperature": 0,
         "environment": ev.environment(s.ollama_url if approach != "fake" else None),
     }

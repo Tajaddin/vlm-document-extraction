@@ -28,9 +28,10 @@ class OllamaError(RuntimeError):
 
 
 class Ollama:
-    def __init__(self, url: str, timeout_s: float = 300.0, num_ctx: int = 8192) -> None:
+    def __init__(self, url: str, timeout_s: float = 300.0, num_ctx: int = 8192, num_predict: int = 2048) -> None:
         self.http = httpx.Client(base_url=url, timeout=timeout_s)
         self.num_ctx = num_ctx
+        self.num_predict = num_predict
 
     def chat(self, model: str, messages: list[dict[str, Any]], schema: dict[str, Any]) -> dict[str, Any]:
         body = {
@@ -39,7 +40,7 @@ class Ollama:
             "format": schema,
             "stream": False,
             "think": False,  # thinking variants spend their budget on hidden reasoning; the answer is the JSON
-            "options": {"temperature": 0, "num_ctx": self.num_ctx, "seed": 0},
+            "options": {"temperature": 0, "num_ctx": self.num_ctx, "num_predict": self.num_predict, "seed": 0},
             "keep_alive": "10m",
         }
         for attempt in (1, 2):  # a model being loaded or swapped can answer 500 once
@@ -56,6 +57,14 @@ class Ollama:
             raise OllamaError(f"ollama {r.status_code}: {r.text[:200]}")
         result: dict[str, Any] = r.json()
         return result
+
+
+def answer(body: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    """The parsed answer, or why there is none. An answer cut off at the output cap counts as a failure even when the
+    JSON happens to close: the model was emitting filler (constrained decoding allows unlimited whitespace)."""
+    if body.get("done_reason") == "length":
+        return None, "truncated"
+    return parse_json(str((body.get("message") or {}).get("content", "")))
 
 
 def _b64(image: bytes) -> str:
@@ -95,7 +104,7 @@ class VisionExtractor:
             body = self.client.chat(self.model, self.messages(doc), schema_for(doc.kind, self.receipt_variant))
         except OllamaError as e:
             return Extraction(None, self.name, self.model, time.perf_counter() - started, error=str(e))
-        fields, error = parse_json(str((body.get("message") or {}).get("content", "")))
+        fields, error = answer(body)
         return Extraction(
             fields,
             self.name,

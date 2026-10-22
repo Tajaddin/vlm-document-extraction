@@ -9,8 +9,8 @@ from typing import Any
 
 from vde.documents import Document
 from vde.extract import prompts
-from vde.extract.base import Extraction, parse_json
-from vde.extract.ollama import Ollama, OllamaError
+from vde.extract.base import Extraction
+from vde.extract.ollama import Ollama, OllamaError, answer
 from vde.schemas import ReceiptVariant, schema_for
 
 Box = Sequence[Sequence[float]]  # four (x, y) corners
@@ -71,7 +71,7 @@ class OcrLlmExtractor:
             return Extraction(
                 None, self.name, self.model, time.perf_counter() - started, error=str(e), stages={"ocr": ocr_seconds}
             )
-        fields, error = parse_json(str((body.get("message") or {}).get("content", "")))
+        fields, error = answer(body)
         total = time.perf_counter() - started
         return Extraction(
             fields,

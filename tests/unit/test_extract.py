@@ -105,3 +105,15 @@ def test_fake_extractor_and_parse_json() -> None:
     assert FakeExtractor().extract(INVOICE).fields["total"] == 100.0
     assert FakeExtractor(echo_gold=True).extract(INVOICE).fields["total"] == 575.33
     assert parse_json("[1, 2]") == (None, "not_an_object")
+
+
+@respx.mock
+def test_an_answer_cut_off_at_the_output_cap_is_a_failure() -> None:
+    route = respx.post(f"{URL}/api/chat").mock(
+        return_value=httpx.Response(
+            200, json={"message": {"content": '{"total": 1}' + " " * 50}, "done_reason": "length", "eval_count": 2048}
+        )
+    )
+    result = VisionExtractor(Ollama(URL, num_predict=2048), "m").extract(INVOICE)
+    assert result.fields is None and result.error == "truncated"
+    assert json.loads(route.calls[0].request.content)["options"]["num_predict"] == 2048

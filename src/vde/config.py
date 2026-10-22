@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     vlm_model: str = "qwen3-vl:8b-instruct"
     text_model: str = "qwen2.5:7b"
     num_ctx: int = 8192
+    # longest real answer seen on the dev sets: 482 tokens; without a cap one OCR answer ran to 8,055 (whitespace)
+    max_output_tokens: int = 2048
     request_timeout_s: float = 300.0
 
     # which extractor the worker runs: a VLM through Ollama, the OCR baseline, Gemini on Vertex, or the CI stand-in
