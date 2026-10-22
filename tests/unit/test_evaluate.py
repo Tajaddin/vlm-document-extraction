@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 
+import httpx
 import pytest
+import respx
 
 from vde import evaluate
 from vde.documents import Document
@@ -68,3 +70,35 @@ def test_report_records_the_configuration(tmp_path: Path) -> None:
     assert r["field_f1"] == 1.0 and r["documents_fully_correct"] == 1.0
     assert r["examples"] == ["r1"] and r["document_ids"] == ["i1", "i2"] and r["prompt_version"]
     json.dumps(r)  # serialisable as it is written
+
+
+def test_review_flags_are_scored_against_wrong_extractions(tmp_path: Path) -> None:
+    docs = [
+        Document("i1", "invoice", b"x", gold={"invoice_number": "A1", "total": "10.00"}, meta={"layout": 2}),
+        Document("i2", "invoice", b"x", gold={"invoice_number": "A2", "total": "20.00"}, meta={"layout": 2}),
+        Document("i3", "invoice", b"x", gold={"invoice_number": "A3", "total": "30.00"}, meta={"layout": 2}),
+    ]
+    answers = {
+        "i1": {"invoice_number": "A1", "total": 10},  # right, passes
+        "i2": {"invoice_number": None, "total": 20},  # wrong (number missed), flagged no_invoice_number
+        "i3": {"invoice_number": "A3", "total": 31},  # wrong (total), not flagged
+    }
+    rows = evaluate.run(Scripted(answers), docs, tmp_path / "p.jsonl")
+    r = evaluate.report("x", docs, rows, {})["review"]
+    assert r["table"] == {"passed_right": 1, "flagged_wrong": 1, "passed_wrong": 1}
+    assert r["wrong_caught"] == 0.5 and r["flagged_that_were_wrong"] == 1.0
+    assert r["by_flag"] == {"no_invoice_number": {"wrong": 1}}
+    assert r["flags_on_gold_labels"] == {}
+
+
+@respx.mock
+def test_placement_reads_where_ollama_loaded_the_model() -> None:
+    respx.get("http://ollama.test/api/ps").mock(
+        return_value=httpx.Response(
+            200,
+            json={"models": [{"name": "m", "size": 100, "size_vram": 81}, {"name": "n", "size": 10, "size_vram": 10}]},
+        )
+    )
+    assert evaluate.placement("http://ollama.test", "m") == "19%/81% CPU/GPU"
+    assert evaluate.placement("http://ollama.test", "n") == "100% GPU"
+    assert evaluate.placement("http://ollama.test", "absent") is None

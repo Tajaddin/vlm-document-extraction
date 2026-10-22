@@ -17,7 +17,7 @@ from typing import Any
 import httpx
 import numpy as np
 
-from vde import log
+from vde import checks, log
 from vde.documents import Document
 from vde.extract import prompts
 from vde.extract.base import Extractor
@@ -49,7 +49,7 @@ def run(extractor: Extractor, docs: Sequence[Document], predictions: Path) -> li
             if doc.id in done:
                 continue
             result = extractor.extract(doc)
-            row = {"id": doc.id, "order": i, **result.as_dict()}
+            row = {"id": doc.id, "order": i, "prompt_version": prompts.VERSION, **result.as_dict()}
             out.write(json.dumps(row, ensure_ascii=False) + "\n")
             out.flush()
             done[doc.id] = row
@@ -163,7 +163,20 @@ def score_invoices(docs: Sequence[Document], rows: Sequence[dict[str, Any]]) -> 
     }
 
 
-def environment(ollama_url: str | None) -> dict[str, Any]:
+def placement(ollama_url: str, model: str) -> str | None:
+    """Where Ollama has the model loaded: '100% GPU', or a CPU/GPU split when it did not fit in VRAM (which slows it
+    down). Read right after a run, while the model is still loaded."""
+    try:
+        for m in httpx.get(f"{ollama_url}/api/ps", timeout=5).json().get("models", []):
+            if m.get("name") == model and m.get("size"):
+                gpu = round(100 * m.get("size_vram", 0) / m["size"])
+                return "100% GPU" if gpu >= 100 else f"{100 - gpu}%/{gpu}% CPU/GPU"
+    except (httpx.HTTPError, ValueError):
+        return None
+    return None
+
+
+def environment(ollama_url: str | None, model: str | None = None) -> dict[str, Any]:
     env: dict[str, Any] = {
         "python": platform.python_version(),
         "os": platform.platform(terse=True),
@@ -185,7 +198,44 @@ def environment(ollama_url: str | None) -> dict[str, Any]:
             env["ollama"] = httpx.get(f"{ollama_url}/api/version", timeout=5).json().get("version")
         except (httpx.HTTPError, ValueError):
             env["ollama"] = None
+        if model:
+            env["placement"] = placement(ollama_url, model)
     return env
+
+
+def review(
+    docs: Sequence[Document], rows: Sequence[dict[str, Any]], per_doc: Sequence[dict[str, Any]]
+) -> dict[str, Any]:
+    """Do the review flags (vde.checks) catch the wrong extractions? A document's extraction is wrong when any field
+    is wrong, missed or invented. The same flags run on the gold labels show how often they fire on correct data."""
+    table: Counter[str] = Counter()
+    by_flag: dict[str, Counter[str]] = {}
+    gold_flagged: Counter[str] = Counter()
+    for doc, row, scored in zip(docs, rows, per_doc, strict=True):
+        wrong = scored["fp"] + scored["fn"] > 0
+        raised = checks.flags(doc.kind, row["fields"])
+        table[("flagged" if raised else "passed") + ("_wrong" if wrong else "_right")] += 1
+        for flag in raised:
+            by_flag.setdefault(flag, Counter())["wrong" if wrong else "right"] += 1
+        for flag in checks.flags(doc.kind, doc.gold):
+            gold_flagged[flag] += 1
+    wrong_total = table["flagged_wrong"] + table["passed_wrong"]
+    flagged_total = table["flagged_wrong"] + table["flagged_right"]
+    return {
+        "documents_wrong": wrong_total,
+        "documents_flagged": flagged_total,
+        "wrong_caught": round(table["flagged_wrong"] / wrong_total, 4) if wrong_total else None,
+        "flagged_that_were_wrong": round(table["flagged_wrong"] / flagged_total, 4) if flagged_total else None,
+        "table": dict(table),
+        "by_flag": {k: dict(v) for k, v in sorted(by_flag.items())},
+        "flags_on_gold_labels": dict(gold_flagged),
+    }
+
+
+def _prompt_versions(rows: Sequence[dict[str, Any]]) -> str | list[str]:
+    """The prompt version(s) the predictions were made with, from the rows themselves."""
+    versions = sorted({str(r.get("prompt_version", "unrecorded")) for r in rows})
+    return versions[0] if len(versions) == 1 else versions
 
 
 def report(
@@ -200,9 +250,10 @@ def report(
     return {
         "run": name,
         "kind": kind,
-        "prompt_version": prompts.VERSION,
+        "prompt_version": _prompt_versions(rows),
         "config": config,
         "examples": [e.id for e in examples],
         "document_ids": [d.id for d in docs],
         **scores,
+        "review": review(docs, rows, scores["per_document"]),
     }

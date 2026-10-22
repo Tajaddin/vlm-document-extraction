@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-VERSION = "p1"
+# p2 (2026-10-22): the invoice prompt adds the last two sentences, after error analysis on the FATURA dev invoices
+# found totals and subtotals the invoice does not print (added up by the model) and "Ship to" names as the buyer.
+# The receipt prompt is unchanged from p1.
+VERSION = "p2"
 
 RECEIPT = """Read this receipt and return it as JSON.
 - menu: one object per purchased line: nm = item name, num = item code, cnt = quantity, unitprice = price of one,
@@ -19,7 +22,9 @@ invoice_number, invoice_date, due_date, po_number, seller_name (the company issu
 buyer_name (the person or company billed, from "Bill to" or "Buyer"), currency (ISO code such as USD or EUR),
 subtotal, tax, discount, total (the final amount due).
 Dates as YYYY-MM-DD. Amounts as plain numbers without currency symbols or thousands separators.
-Use null for any field the invoice does not print. Do not compute or guess values."""
+Use null for any field the invoice does not print. Do not compute or guess values.
+If the invoice prints no subtotal or no total, return null for it: never add up the lines or apply a discount yourself.
+buyer_name comes only from a "Bill to" or "Buyer" block, never from "Ship to"."""
 
 OCR_PREFIX = "The text below was read from the document by OCR, one printed line per row, top to bottom.\n\n"
 

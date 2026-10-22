@@ -53,6 +53,98 @@ jobs:
       - name: field F1 and TED accuracy equal Donut's on seeded errors
         run: uv run --with zss --with nltk python scripts/check_metrics_against_donut.py --out .ci/metrics-vs-donut.json
 
+  lambdas:
+    name: Lambdas (TypeScript) typecheck, lint, tests, build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: lambdas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: lambdas/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck && npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  terraform:
+    name: Terraform fmt, validate, tflint, trivy (Floci and AWS)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.16.6", terraform_wrapper: false }
+      - run: terraform fmt -check -recursive infra/terraform
+      - name: validate both environments
+        run: |
+          for env in floci aws; do
+            terraform -chdir=infra/terraform/envs/$env init -backend=false -input=false
+            terraform -chdir=infra/terraform/envs/$env validate
+          done
+      - name: tflint
+        run: docker run --rm -v "$PWD/infra/terraform:/data" -t ghcr.io/terraform-linters/tflint:v0.59.1 --chdir=/data/modules/intake
+      - name: trivy (misconfiguration, the module as deployed to AWS)
+        run: docker run --rm -v "$PWD/infra/terraform:/src" aquasec/trivy:0.67.2 config --exit-code 1 --severity HIGH,CRITICAL /src/modules/intake
+
+  serverless:
+    name: intake on the Floci emulator (Terraform apply, worker, end to end, k6)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { version: "${{ env.UV_VERSION }}", enable-cache: true }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: lambdas/package-lock.json }
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.16.6", terraform_wrapper: false }
+      - run: uv sync --locked --all-extras
+      - run: npm ci && npm run build
+        working-directory: lambdas
+      - name: Floci
+        run: docker compose up -d --wait --wait-timeout 300 floci
+      - name: Terraform apply to Floci
+        run: |
+          terraform -chdir=infra/terraform/envs/floci init -input=false
+          terraform -chdir=infra/terraform/envs/floci apply -auto-approve -input=false
+      - name: worker against Floci (Testcontainers) and the deployed stack end to end
+        env: { AWS_ACCESS_KEY_ID: test, AWS_SECRET_ACCESS_KEY: test }
+        run: uv run pytest -m integration -v tests/integration/test_worker.py tests/integration/test_e2e.py
+      - name: k6 on the emulator, short (needs FATURA for the sample invoice, so a synthetic JPEG here)
+        run: |
+          mkdir -p .ci/load/in .ci/load/out && cp load/intake.js .ci/load/in/
+          uv run python -c "from PIL import Image; Image.new('RGB', (595, 841), 'white').save('.ci/load/in/invoice.jpg', quality=90)"
+          api_id=$(terraform -chdir=infra/terraform/envs/floci output -raw api_id)
+          api_key=$(terraform -chdir=infra/terraform/envs/floci output -raw api_key)
+          docker run --rm --network vde_default -v "$PWD/.ci/load/in:/load:ro" -v "$PWD/.ci/load/out:/out" \
+            -e TARGET=http://floci:4566 -e API_HOST="$api_id.execute-api.localhost.floci.io" -e API_KEY="$api_key" \
+            -e RATES=5 -e STEP_S=20 grafana/k6:1.8.2 run --quiet /load/intake.js
+      - if: failure()
+        run: docker compose logs --tail 200 floci
+
+  image:
+    name: worker image build, scan, non-root
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f docker/worker.Dockerfile -t vde-worker:ci .
+      - name: trivy (vulnerabilities with a fix)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.67.2 image \
+            --exit-code 1 --severity CRITICAL --ignore-unfixed vde-worker:ci
+      - name: runs as a non-root user
+        run: test "$(docker inspect -f '{{.Config.User}}' vde-worker:ci)" = "vde"
+
+  observability:
+    name: alert rules (promtool)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker run --rm -v "$PWD/observability:/w" -w /w --entrypoint promtool prom/prometheus:v3.5.0 check rules alert_rules.yml
+          docker run --rm -v "$PWD/observability:/w" -w /w --entrypoint promtool prom/prometheus:v3.5.0 test rules alerts_test.yml
+
   security:
     name: gitleaks and pip-audit
     runs-on: ubuntu-24.04

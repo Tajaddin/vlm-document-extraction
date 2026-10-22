@@ -68,11 +68,12 @@ def gold_fields(annotation: dict[str, Any]) -> tuple[dict[str, Any], dict[str, s
         "seller_name": _text(annotation, "SELLER_NAME"),
         "seller_email": _text(annotation, "SELLER_EMAIL"),
         "buyer_name": _text(annotation, "BUYER") or _text(annotation, "BILL_TO"),
-        "currency": _text(annotation, "TOTAL") or _text(annotation, "SUB_TOTAL"),
+        "currency": _text(annotation, "TOTAL") or _text(annotation, "AMOUNT_DUE") or _text(annotation, "SUB_TOTAL"),
         "subtotal": _text(annotation, "SUB_TOTAL"),
         "tax": _text(annotation, "TAX"),
         "discount": _text(annotation, "DISCOUNT"),
-        "total": _text(annotation, "TOTAL"),
+        # some layouts file the amount due under AMOUNT_DUE ("BALANCE_DUE : ..."), others under TOTAL
+        "total": _text(annotation, "TOTAL") or _text(annotation, "AMOUNT_DUE"),
     }
     parsed: dict[str, Any] = {}
     failed: dict[str, str] = {}
