@@ -63,3 +63,12 @@ def test_unparseable_text_is_reported_not_guessed() -> None:
     gold, failed = gold_fields({"DATE": {"text": "Date: soon"}, "TOTAL": {"text": "TOTAL : see attached"}})
     assert gold["invoice_date"] is None and gold["total"] is None
     assert failed == {"invoice_date": "Date: soon", "total": "TOTAL : see attached"}
+
+
+def test_amount_due_is_the_total_when_the_layout_has_no_total() -> None:
+    gold, _ = gold_fields(
+        {"AMOUNT_DUE": {"text": "BALANCE_DUE : 1158.86 EUR"}, "SUB_TOTAL": {"text": "SUB_TOTAL : 1100.00  EUR"}}
+    )
+    assert gold["total"] == "1158.86" and gold["currency"] == "EUR"
+    both, _ = gold_fields({"TOTAL": {"text": "TOTAL : 300.00 USD"}, "AMOUNT_DUE": {"text": "DUE_AMOUNT : 383.94 $"}})
+    assert both["total"] == "300.00"  # TOTAL wins when a layout prints both
