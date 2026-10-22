@@ -1,6 +1,6 @@
 [project]
 name = "vlm-document-extraction"
-version = "0.1.0"
+version = "1.0.0"
 description = "Receipt and invoice extraction with local vision-language models, measured against an OCR + LLM baseline on held-out layouts, behind a serverless intake"
 readme = "README.md"
 license = "MIT"
