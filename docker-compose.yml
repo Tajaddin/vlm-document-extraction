@@ -16,7 +16,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_floci/health > /dev/null || wget -qO- http://localhost:4566/_floci/health > /dev/null"]
+      # the image has bash but neither curl nor wget: an HTTP request over bash's /dev/tcp
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/4566 && printf 'GET /_floci/health HTTP/1.0\\r\\n\\r\\n' >&3 && read -r status <&3 && [[ $$status == *' 200 '* ]]"]
       interval: 5s
       timeout: 3s
       retries: 30
