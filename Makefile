@@ -1,4 +1,5 @@
-.PHONY: help install lint format typecheck test test-data check secret-scan fetch verify data-report dev-runs test-runs summarize metrics-check backlog \n        lambdas up infra-up infra-down test-integration load alerts-test worker-up
+.PHONY: help install lint format typecheck test test-data check secret-scan fetch verify data-report dev-runs test-runs summarize metrics-check backlog \
+        lambdas up infra-up infra-down test-integration load alerts-test worker-up
 
 help:               ## this list
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/'
@@ -66,7 +67,9 @@ test-integration:   ## worker against Floci (Testcontainers) and the deployed st
 	AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test uv run pytest -m integration -v
 
 worker-up:          ## the worker in Docker, reading the queue the Terraform created
-	VDE_QUEUE_URL=$$(terraform -chdir=infra/terraform/envs/floci output -raw queue_url) 	VDE_BUCKET=$$(terraform -chdir=infra/terraform/envs/floci output -raw bucket) 	docker compose --profile worker up -d --build worker
+	VDE_QUEUE_URL=$$(terraform -chdir=infra/terraform/envs/floci output -raw queue_url) \
+	VDE_BUCKET=$$(terraform -chdir=infra/terraform/envs/floci output -raw bucket) \
+	docker compose --profile worker up -d --build worker
 
 load:               ## k6 on the emulated intake at 5, 10, 20 and 40 requests/s (reports/load/)
 	bash scripts/load.sh 5,10,20,40 60

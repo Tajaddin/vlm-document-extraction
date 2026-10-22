@@ -1,3 +1,9 @@
 # gitleaks: the default rules. Allowlist only what is provably not a secret.
 [extend]
 useDefault = true
+
+[[allowlists]]
+description = "sha256 of the literal string test-key: the digest the Lambda unit tests configured in an earlier version of their config (commit c393d8e); the config now computes it"
+condition = "AND"
+paths = ['''(^|/)lambdas/vitest\.config\.ts$''']
+regexes = ['''^62af8704764faf8ea82fc61ce9c4c3908b6cb97d463a634e9e587d7c885db0ef$''']
