@@ -1,0 +1,75 @@
+[project]
+name = "vlm-document-extraction"
+version = "0.1.0"
+description = "Receipt and invoice extraction with local vision-language models, measured against an OCR + LLM baseline on held-out layouts, behind a serverless intake"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+authors = [{ name = "Tajaddin Gafarov", email = "gafarovtajaddin@gmail.com" }]
+dependencies = [
+  "httpx>=0.28",
+  "pillow>=11.3",
+  "pyarrow>=21",
+  "pydantic>=2.11",
+  "pydantic-settings>=2.11",
+  "structlog>=25.4",
+  "typer>=0.20",
+  "numpy>=2.2",
+]
+
+[project.optional-dependencies]
+# The OCR baseline: RapidOCR's PP-OCR models on ONNX Runtime (CPU).
+ocr = ["rapidocr>=3.4", "onnxruntime>=1.22"]
+# The SQS worker behind the serverless intake.
+worker = ["boto3>=1.40", "prometheus-client>=0.23"]
+# Gemini on Vertex AI through the Google Gen AI SDK (tested against recorded responses; a live run bills an account).
+vertex = ["google-genai>=1.30"]
+dev = [
+  "pytest>=8.4",
+  "pytest-cov>=7",
+  "respx>=0.22",
+  "testcontainers>=4.13",
+  "ruff>=0.14",
+  "mypy>=1.18",
+  "pip-audit>=2.9",
+]
+
+[project.scripts]
+vde = "vde.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vde"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "S", "W", "PL", "RUF", "SIM", "C4", "PT"]
+ignore = ["PLR0913", "PLR0917", "N818", "PLR2004", "S101", "S311", "S603", "S607", "E501", "PLC0415"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "PLR", "PT018"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "integration: needs Docker (Testcontainers) or the running stack",
+  "data: needs the downloaded datasets (scripts/fetch_data.py)",
+]
+
+[tool.coverage.run]
+source = ["src/vde"]
+omit = ["src/vde/cli.py"]

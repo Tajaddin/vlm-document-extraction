@@ -1,0 +1,42 @@
+{
+  "datasets": {
+    "cord": {
+      "name": "CORD v2 (Consolidated Receipt Dataset)",
+      "publisher": "NAVER CLOVA",
+      "source": "https://huggingface.co/datasets/naver-clova-ix/cord-v2",
+      "revision": "7f0115a4b758a71d6473b8d085751692da2fef98",
+      "license": "CC BY 4.0",
+      "use": "validation: prompt development and few-shot examples; test: scored once",
+      "files": [
+        {
+          "path": "data/validation-00000-of-00001-cc3c5779fe22e8ca.parquet",
+          "url": "https://huggingface.co/datasets/naver-clova-ix/cord-v2/resolve/7f0115a4b758a71d6473b8d085751692da2fef98/data/validation-00000-of-00001-cc3c5779fe22e8ca.parquet",
+          "size": 242080800,
+          "sha256": "0d0f6dac11fdcc549de2746aa9f53136a3bc22a2a1aff2b0b847f7622ad60c15"
+        },
+        {
+          "path": "data/test-00000-of-00001-9c204eb3f4e11791.parquet",
+          "url": "https://huggingface.co/datasets/naver-clova-ix/cord-v2/resolve/7f0115a4b758a71d6473b8d085751692da2fef98/data/test-00000-of-00001-9c204eb3f4e11791.parquet",
+          "size": 234202795,
+          "sha256": "51c65f1788faff392abe2a0b55b023eb23e9be551c509138eaa3a832514224e7"
+        }
+      ]
+    },
+    "fatura": {
+      "name": "FATURA v2 (10,000 synthetic invoices in 50 layouts)",
+      "publisher": "Limam, Alaoui, et al. (Zenodo)",
+      "source": "https://zenodo.org/records/10371464",
+      "paper": "https://arxiv.org/abs/2311.11856",
+      "license": "CC BY 4.0",
+      "use": "test: the 10 layouts in Strat2_Split.txt's test_inds; few-shot examples only from its 40 train layouts",
+      "files": [
+        {
+          "path": "FATURA2.zip",
+          "url": "https://zenodo.org/records/10371464/files/FATURA2.zip?download=1",
+          "size": 690717658,
+          "md5": "4c9404462f22c5241eb1a290a02eb2a2"
+        }
+      ]
+    }
+  }
+}

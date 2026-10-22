@@ -12,10 +12,10 @@ htmlcov/
 .env.*
 !.env.example
 
-# downloaded datasets (scripts/fetch_data.py) and per-run caches
-data/
-.cache/
-.ci/
+# downloaded datasets (`vde fetch`) and per-run caches
+/data/
+/.cache/
+/.ci/
 
 node_modules/
 lambdas/dist/
