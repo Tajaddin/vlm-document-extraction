@@ -1,8 +1,8 @@
 """Gemini on Vertex AI through the Google Gen AI SDK, behind the same interface and JSON schema as the local models.
 
-A call bills the configured Google Cloud project (about $0.30 per million input tokens for Gemini 2.5 Flash at the
-time of writing), so nothing in this repository calls it on its own: the tests use a response in the documented
-`GenerateContentResponse` format, and a live run needs VDE_VERTEX_PROJECT and the owner's credentials
+A call bills the configured Google Cloud project (Gemini 3.8 Flash: $0.75 per million input tokens and $3.75 per
+million output in October 2026), so nothing in this repository calls it on its own: the tests use a response in the
+documented `GenerateContentResponse` format, and a live run needs VDE_VERTEX_PROJECT and the owner's credentials
 (docs/DEPLOY.md)."""
 
 from __future__ import annotations

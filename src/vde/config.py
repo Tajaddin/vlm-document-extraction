@@ -40,8 +40,9 @@ class Settings(BaseSettings):
 
     # Vertex AI (only with the owner's billing go-ahead)
     vertex_project: str | None = None
-    vertex_location: str = "us-central1"
-    vertex_model: str = "gemini-2.5-flash"
+    # gemini-2.5-flash answered 404 for a new project on 2026-10-23; the 3.x Flash models are served from "global"
+    vertex_location: str = "global"
+    vertex_model: str = "gemini-3.8-flash"
 
 
 @lru_cache(maxsize=1)

@@ -27,15 +27,19 @@ month after the first ten.
 
 ## Vertex AI (backlog #18)
 
-Gemini 2.5 Flash is listed at about $0.30 per million input tokens and $2.50 per million output; the 200 test
-documents here are about 300,000 input tokens, a few cents.
+**Done 2026-10-23** on a free-trial project (reports in `reports/eval/*/vertex-gemini-3.8-flash-*`). Gemini 2.5
+Flash, the model first planned, answered 404 for a new project in both `us-central1` and `global`; the 3.x Flash
+models answer on the `global` endpoint, so the defaults are now `gemini-3.8-flash` and `global`. Measured usage:
+1,602 input and 114 output tokens per invoice, 2,132 and 179 per receipt; at $0.75 / $3.75 per million (October
+2026) the 200 test documents cost about $0.39.
 
-1. A Google Cloud project with billing, and the Vertex AI API enabled.
+1. A Google Cloud project with billing, and the Vertex AI API enabled
+   (`gcloud services enable aiplatform.googleapis.com`).
 2. `gcloud auth application-default login` (the SDK picks up these credentials).
-3. Run it on both test sets:
+3. Run it on both test sets (try `--split dev --limit 2` first; it costs a fraction of a cent):
    ```bash
-   VDE_VERTEX_PROJECT=<project-id> uv run vde eval --dataset fatura --approach vertex
-   VDE_VERTEX_PROJECT=<project-id> uv run vde eval --dataset cord --approach vertex
+   VDE_VERTEX_PROJECT=<project-id> uv run --extra vertex vde eval --dataset fatura --approach vertex
+   VDE_VERTEX_PROJECT=<project-id> uv run --extra vertex vde eval --dataset cord --approach vertex
    ```
    (`--approach vertex` is wired into the CLI with the adapter; the run writes its report next to the local
-   models' in `reports/eval/`.)
+   models' in `reports/eval/`. `VDE_VERTEX_MODEL` and `VDE_VERTEX_LOCATION` override the defaults.)
