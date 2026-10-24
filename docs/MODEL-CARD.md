@@ -87,4 +87,6 @@ when they fired) catch 11-38% of a very large set. The flags are a safety net, n
 
 - One GPU, one machine, 100 documents per test set: intervals of a few points; differences inside them are ties.
 - FATURA is synthetic and its arithmetic and dates are not always consistent.
-- Gemini on Vertex AI is implemented behind the same interface but was not run (it bills a Google Cloud project).
+- Gemini 3.8 Flash on Vertex AI was scored once per test set on 2026-10-23 (receipts 0.837, invoices 0.987 field
+  F1, zero-shot): a hosted reference point, not one of the local models this card describes. Sending documents to a
+  cloud API is a data-handling decision the local models avoid.

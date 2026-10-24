@@ -1,6 +1,17 @@
 {
   "cord": {
     "vs_ocr_baseline": {
+      "vertex-gemini-3.8-flash-0shot-required": {
+        "documents": 98,
+        "f1_a": 0.338,
+        "f1_b": 0.8362,
+        "difference": 0.4983,
+        "difference_95ci": [
+          0.4515,
+          0.5448
+        ],
+        "significant": true
+      },
       "vlm-qwen2.5vl-7b-0shot-required": {
         "documents": 98,
         "f1_a": 0.338,
@@ -94,6 +105,24 @@
           "documents_flagged": 36,
           "wrong_caught": 0.36,
           "flagged_that_were_wrong": 1.0,
+          "flags_on_gold_labels": {
+            "items_do_not_sum_to_subtotal": 5,
+            "no_total": 5,
+            "change_does_not_match": 3,
+            "items_do_not_sum_to_total": 1
+          }
+        }
+      },
+      "vertex-gemini-3.8-flash-0shot-required": {
+        "field_f1": 0.8366,
+        "failures": {},
+        "values_with_braces": "0/1312",
+        "placement": null,
+        "review": {
+          "documents_wrong": 72,
+          "documents_flagged": 12,
+          "wrong_caught": 0.1389,
+          "flagged_that_were_wrong": 0.8333,
           "flags_on_gold_labels": {
             "items_do_not_sum_to_subtotal": 5,
             "no_total": 5,
@@ -204,6 +233,17 @@
   },
   "fatura": {
     "vs_ocr_baseline": {
+      "vertex-gemini-3.8-flash-0shot": {
+        "documents": 100,
+        "f1_a": 0.9221,
+        "f1_b": 0.9872,
+        "difference": 0.0651,
+        "difference_95ci": [
+          0.0536,
+          0.0772
+        ],
+        "significant": true
+      },
       "vlm-qwen2.5vl-7b-0shot": {
         "documents": 100,
         "f1_a": 0.9221,
@@ -295,6 +335,24 @@
           "documents_flagged": 54,
           "wrong_caught": 0.4872,
           "flagged_that_were_wrong": 0.7037,
+          "flags_on_gold_labels": {
+            "total_below_subtotal": 5,
+            "due_before_issue": 32,
+            "no_invoice_number": 20,
+            "no_total": 10
+          }
+        }
+      },
+      "vertex-gemini-3.8-flash-0shot": {
+        "field_f1": 0.9872,
+        "failures": {},
+        "values_with_braces": "0/590",
+        "placement": null,
+        "review": {
+          "documents_wrong": 21,
+          "documents_flagged": 52,
+          "wrong_caught": 0.1905,
+          "flagged_that_were_wrong": 0.0769,
           "flags_on_gold_labels": {
             "total_below_subtotal": 5,
             "due_before_issue": 32,

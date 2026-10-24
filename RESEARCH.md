@@ -50,3 +50,7 @@ Gemini 2.5 Flash on Vertex AI is listed at about $0.30 per million input tokens 
 that in batch mode ([Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing)): the 200
 evaluation documents here would cost a few cents. That still bills an account, so the Vertex path is built and
 tested against recorded responses, and run only with the owner's go-ahead.
+
+Update 2026-10-23: with that go-ahead, the live run found Gemini 2.5 Flash no longer served to a new project
+(404 in us-central1 and global); it used Gemini 3.8 Flash on the global endpoint instead
+([DEPLOY](docs/DEPLOY.md#vertex-ai-backlog-18)).

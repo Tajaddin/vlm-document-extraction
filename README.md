@@ -17,6 +17,7 @@ On one RTX 4060 (8 GB), 100 test documents per set, 95% intervals from resamplin
 | OCR + LLM (RapidOCR + qwen2.5:7b) | field F1 0.336 (0.295-0.379) | 0.922 (0.911-0.933) |
 | Best VLM, zero-shot | **0.680** (0.651-0.711), qwen3-vl:8b | 0.943 (0.932-0.953), qwen2.5vl:7b |
 | Best VLM, two examples from other layouts | no measurable gain | **0.964** (0.954-0.974), qwen3-vl:8b, 58% of invoices fully right |
+| Cloud reference: Gemini 3.8 Flash on Vertex AI, zero-shot | **0.837** (0.799-0.871) | **0.987** (0.982-0.992), 79% of invoices fully right |
 
 - **Where the image is hard, the VLM wins outright:** on receipts qwen3-vl roughly doubles the OCR pipeline
   (+0.34, 95% CI +0.30 to +0.38, paired).
@@ -26,6 +27,11 @@ On one RTX 4060 (8 GB), 100 test documents per set, 95% intervals from resamplin
   two examples fix most of it (+0.32 F1).
 - **Few-shot costs context:** two example receipts push a request to 10,506 tokens; at an 8K context a fifth of
   them were refused. On an 8 GB card the 7-8B models already run 15-19% on the CPU.
+- **A hosted model is the ceiling, and it is cheap:** Gemini 3.8 Flash (run 2026-10-23, same prompt, schema and
+  scorer) beats every local model on both sets, with intervals that do not overlap theirs: +0.50 over OCR + LLM on
+  receipts (paired, 98 documents both answered). Measured usage was 1,602 input and 114 output tokens per invoice
+  and 2,132 / 179 per receipt: about $0.39 for all 200 documents at the October 2026 list prices ($0.75 / $3.75 per
+  million), p50 2.3-2.9 s per document over the internet. The local models keep the documents on the machine.
 
 ## What it shows
 
@@ -36,7 +42,7 @@ On one RTX 4060 (8 GB), 100 test documents per set, 95% intervals from resamplin
 | AWS Lambda (TypeScript, Node 22) behind API Gateway, S3, SQS with a dead-letter queue, DynamoDB; idempotent submits | `lambdas/`, [ADR 0003](docs/adr/0003-serverless-intake-gpu-worker.md) |
 | Terraform: one module, an emulator environment applied in CI and an AWS environment validated, linted and scanned | `infra/terraform`, [ADR 0004](docs/adr/0004-floci-for-local-aws.md) |
 | A GPU worker with review flags, Prometheus metrics, alert rules with promtool tests, a runbook | `src/vde/worker`, `observability/`, [RUNBOOK](docs/RUNBOOK.md) |
-| Gemini on Vertex AI behind the same interface (not run: it bills an account) | `src/vde/extract/vertex.py`, [DEPLOY](docs/DEPLOY.md) |
+| Gemini on Vertex AI behind the same interface, scored on both test sets | `src/vde/extract/vertex.py`, [DEPLOY](docs/DEPLOY.md) |
 | Scrum: backlog, 4 sprints, a pull request and a retro per sprint | [board](https://github.com/users/Tajaddin/projects/5), [retros](docs/sprints) |
 
 Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -80,6 +86,7 @@ AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test uv run pytest -m integration  
 - FATURA is synthetic: its totals do not always add up and its due dates fall before the issue date on 32% of the
   test invoices.
 - The review flags catch a third to half of wrong invoices: a person still checks.
-- AWS and Vertex AI are not exercised live (they need the owner's accounts; steps in [DEPLOY](docs/DEPLOY.md)).
+- AWS is not exercised live (it needs the owner's account; steps in [DEPLOY](docs/DEPLOY.md)). Vertex AI was run
+  once on each test set; Gemini 2.5 Flash, the model first planned, was no longer served to a new project.
 
 MIT licensed. Data: CORD v2 and FATURA, both CC BY 4.0.
