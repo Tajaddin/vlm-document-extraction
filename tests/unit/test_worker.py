@@ -1,0 +1,81 @@
+"""The worker's job states with stand-in AWS clients: every job ends `done` or `failed`, whatever the extractor does,
+and a job is never offered to a second worker while the first is still on it. The same paths against real SQS and
+DynamoDB APIs are in tests/integration/test_worker.py."""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+from unittest.mock import MagicMock
+
+import pytest
+from botocore.exceptions import ClientError
+
+from vde.config import Settings
+from vde.documents import Document
+from vde.extract.base import Extraction
+from vde.extract.fake import FakeExtractor
+from vde.worker.app import Worker
+
+JOB = "a" * 32
+
+
+def message(receives: int) -> dict[str, Any]:
+    return {
+        "Body": json.dumps({"id": JOB, "kind": "invoice", "key": f"incoming/{JOB}.png"}),
+        "ReceiptHandle": "handle",
+        "MessageId": "m1",
+        "Attributes": {"ApproximateReceiveCount": str(receives)},
+    }
+
+
+class Crashing:
+    name = "crashing"
+
+    def extract(self, doc: Document) -> Extraction:
+        raise MemoryError("decoding the image")
+
+
+def clients() -> tuple[MagicMock, MagicMock, MagicMock]:
+    s3 = MagicMock()
+    s3.get_object.return_value = {"Body": MagicMock(read=lambda: b"\x89PNG")}
+    return MagicMock(), s3, MagicMock()
+
+
+def statuses(dynamo: MagicMock) -> list[str]:
+    return [c.kwargs["ExpressionAttributeValues"][":status"]["S"] for c in dynamo.update_item.call_args_list]
+
+
+def test_an_extractor_crash_on_the_last_delivery_fails_the_job() -> None:
+    sqs, s3, dynamo = clients()
+    Worker(Settings(queue_url="q"), Crashing(), sqs, s3, dynamo).handle(message(receives=3))
+    assert statuses(dynamo) == ["processing", "failed"]
+    assert dynamo.update_item.call_args.kwargs["ExpressionAttributeValues"][":error"] == {"S": "worker: MemoryError"}
+    sqs.delete_message.assert_not_called()  # SQS dead-letters it
+
+
+def test_an_extractor_crash_before_the_last_delivery_leaves_the_job_for_a_retry() -> None:
+    sqs, s3, dynamo = clients()
+    Worker(Settings(queue_url="q"), Crashing(), sqs, s3, dynamo).handle(message(receives=1))
+    assert statuses(dynamo) == ["processing"]
+    sqs.delete_message.assert_not_called()
+
+
+def test_a_result_the_table_refuses_fails_the_job_on_the_last_delivery() -> None:
+    sqs, s3, dynamo = clients()
+
+    def update(**kwargs: Any) -> None:
+        if kwargs["ExpressionAttributeValues"][":status"] == {"S": "done"}:
+            raise ClientError({"Error": {"Code": "ValidationException", "Message": "bad number"}}, "UpdateItem")
+
+    dynamo.update_item.side_effect = update
+    Worker(Settings(queue_url="q"), FakeExtractor(), sqs, s3, dynamo).handle(message(receives=3))
+    assert statuses(dynamo) == ["processing", "done", "failed"]
+    sqs.delete_message.assert_not_called()
+
+
+def test_a_job_that_cannot_be_marked_failed_is_not_swallowed() -> None:
+    sqs, s3, dynamo = clients()
+    dynamo.update_item.side_effect = [None, ClientError({"Error": {"Code": "Throttled", "Message": ""}}, "UpdateItem")]
+    with pytest.raises(ClientError):
+        Worker(Settings(queue_url="q"), Crashing(), sqs, s3, dynamo).handle(message(receives=3))

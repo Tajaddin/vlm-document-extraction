@@ -2,9 +2,10 @@
 DynamoDB, delete the message.
 
 Inference needs the GPU, so this runs next to it rather than in Lambda (ADR 0003). Failure handling leans on SQS:
-a job that fails is not deleted, so SQS offers it again after the visibility timeout and, after `max_receive_count`
-deliveries, moves it to the dead-letter queue; the worker marks the job `failed` on its last delivery so the client
-sees why. A message that is not a job at all is left for the dead-letter queue the same way."""
+a job that fails (no answer from the extractor, or anything raised on the way) is not deleted, so SQS offers it again
+after the visibility timeout and, after `max_receive_count` deliveries, moves it to the dead-letter queue; the worker
+marks the job `failed` on its last delivery so the client sees why. A message that is not a job at all is left for the
+dead-letter queue the same way."""
 
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ from prometheus_client import Counter, Gauge, Histogram, start_http_server
 
 from vde import checks, log
 from vde.config import Settings
-from vde.documents import Document
+from vde.documents import Document, Kind
 from vde.extract.base import Extractor
 
 logger = log.get(__name__)
@@ -81,18 +82,30 @@ class Worker:
             return  # not deleted: SQS moves it to the dead-letter queue after max_receive_count deliveries
 
         self._update(job_id, {"status": "processing", "updatedAt": _now()})
-        image = self.s3.get_object(Bucket=self.s.bucket, Key=key)["Body"].read()
-        doc = Document(id=job_id, kind=kind, image=image)
-        result = self.extractor.extract(doc)
-        SECONDS.labels(kind).observe(result.seconds)
+        try:
+            error = self._run(job_id, kind, key)
+        except Exception as e:  # whatever goes wrong, the job must not stay "processing" after its last delivery
+            logger.exception("job_crashed", job=job_id, receives=receives)
+            error = f"worker: {type(e).__name__}"
 
-        if result.fields is None:
+        if error is not None:
             last = receives >= self.max_receive_count
             JOBS.labels(kind, "failed" if last else "retry").inc()
-            logger.warning("extraction_failed", job=job_id, error=result.error, receives=receives, last=last)
+            logger.warning("extraction_failed", job=job_id, error=error, receives=receives, last=last)
             if last:
-                self._update(job_id, {"status": "failed", "error": result.error or "unknown", "updatedAt": _now()})
+                self._update(job_id, {"status": "failed", "error": error, "updatedAt": _now()})
             return  # not deleted: offered again, then dead-lettered
+
+        self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"])
+        JOBS.labels(kind, "done").inc()
+
+    def _run(self, job_id: str, kind: Kind, key: str) -> str | None:
+        """Extract the document and store the result as `done`; the reason, when there is no result."""
+        image = self.s3.get_object(Bucket=self.s.bucket, Key=key)["Body"].read()
+        result = self.extractor.extract(Document(id=job_id, kind=kind, image=image))
+        SECONDS.labels(kind).observe(result.seconds)
+        if result.fields is None:
+            return result.error or "unknown"
 
         review = checks.flags(kind, result.fields)
         for flag in review:
@@ -110,9 +123,8 @@ class Worker:
                 "updatedAt": _now(),
             },
         )
-        self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"])
-        JOBS.labels(kind, "done").inc()
         logger.info("job_done", job=job_id, kind=kind, seconds=round(result.seconds, 2), review=review)
+        return None
 
     def _update(self, job_id: str, values: dict[str, Any]) -> None:
         names = {f"#{k}": k for k in values}
