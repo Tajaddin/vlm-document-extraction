@@ -77,8 +77,8 @@ AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test uv run pytest -m integration  
   a second for a minute each): 4,503 submits, 0 failed requests; submit p50 9.2 ms, p99 59.5 ms (71.4 ms at 40/s);
   the slowest requests were Lambda cold starts. Emulator numbers on one machine: they show the code path under load,
   not AWS capacity.
-- **Tests**: 67 Python unit tests, 4 integration tests (the worker against Floci via Testcontainers, the deployed
-  stack end to end), 3 tests on the downloaded data, 16 TypeScript tests with 100% line coverage, 8 promtool
+- **Tests**: 78 Python unit tests, 4 integration tests (the worker against Floci via Testcontainers, the deployed
+  stack end to end), 3 tests on the downloaded data, 29 TypeScript tests with 100% line coverage, 8 promtool
   scenarios; CI with 9 jobs including Terraform applied to Floci, trivy on the image and the Terraform, gitleaks,
   pip-audit and npm audit.
 
