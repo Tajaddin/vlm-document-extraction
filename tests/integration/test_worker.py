@@ -1,5 +1,5 @@
-"""The worker against real S3, SQS and DynamoDB APIs: a Floci container started by Testcontainers. The queue offers a
-job again after one second and dead-letters it after two deliveries, so the failure paths run in seconds."""
+"""The worker against real S3, SQS and DynamoDB APIs: a Floci container started by Testcontainers. The worker hides a
+job for one second and the queue dead-letters it after two deliveries, so the failure paths run in seconds."""
 
 from __future__ import annotations
 
@@ -87,7 +87,14 @@ def submit(aws: dict[str, Any], queue: str, job_id: str, body: str | None = None
 
 
 def worker(aws: dict[str, Any], queue: str, extractor: Any) -> Worker:
-    settings = Settings(queue_url=queue, bucket="docs", table="jobs", aws_endpoint_url=aws["url"], worker_wait_s=1)
+    settings = Settings(
+        queue_url=queue,
+        bucket="docs",
+        table="jobs",
+        aws_endpoint_url=aws["url"],
+        worker_wait_s=1,
+        worker_visibility_s=1,
+    )
     return Worker(settings, extractor, aws["sqs"], aws["s3"], aws["dynamodb"], max_receive_count=2)
 
 

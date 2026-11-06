@@ -12,7 +12,10 @@ from __future__ import annotations
 import json
 import signal
 import tempfile
+import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -62,6 +65,7 @@ class Worker:
             QueueUrl=self.queue_url,
             MaxNumberOfMessages=1,
             WaitTimeSeconds=self.s.worker_wait_s,
+            VisibilityTimeout=self.s.worker_visibility_s,
             MessageSystemAttributeNames=["ApproximateReceiveCount"],
         )
         messages = response.get("Messages", [])
@@ -83,7 +87,8 @@ class Worker:
 
         self._update(job_id, {"status": "processing", "updatedAt": _now()})
         try:
-            error = self._run(job_id, kind, key)
+            with self._hidden(message["ReceiptHandle"]):
+                error = self._run(job_id, kind, key)
         except Exception as e:  # whatever goes wrong, the job must not stay "processing" after its last delivery
             logger.exception("job_crashed", job=job_id, receives=receives)
             error = f"worker: {type(e).__name__}"
@@ -125,6 +130,31 @@ class Worker:
         )
         logger.info("job_done", job=job_id, kind=kind, seconds=round(result.seconds, 2), review=review)
         return None
+
+    @contextmanager
+    def _hidden(self, receipt_handle: str) -> Iterator[None]:
+        """Extend the message's visibility every third of the timeout while the job runs, so SQS never offers a slow
+        extraction to another worker halfway through (it would run twice)."""
+        done = threading.Event()
+
+        def extend() -> None:
+            while not done.wait(self.s.worker_visibility_s / 3):
+                try:
+                    self.sqs.change_message_visibility(
+                        QueueUrl=self.queue_url,
+                        ReceiptHandle=receipt_handle,
+                        VisibilityTimeout=self.s.worker_visibility_s,
+                    )
+                except Exception:  # the next attempt may get through; at worst SQS offers the job again
+                    logger.warning("visibility_not_extended", exc_info=True)
+
+        thread = threading.Thread(target=extend, name="visibility", daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            done.set()
+            thread.join()
 
     def _update(self, job_id: str, values: dict[str, Any]) -> None:
         names = {f"#{k}": k for k in values}

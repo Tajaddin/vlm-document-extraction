@@ -18,8 +18,8 @@ The process answers but has not asked SQS for work in 10 minutes: the loop is st
 
 - Confirm: `vde_worker_last_poll_timestamp_seconds` on `:9108/metrics`; `ollama ps` on the host (is a model loaded,
   on the GPU?).
-- Ollama hung or out of VRAM: restart Ollama, then the worker. The job in flight becomes visible again after the
-  visibility timeout and is retried.
+- Ollama hung or out of VRAM: restart Ollama, then the worker. The worker keeps the job in flight hidden for as long
+  as it runs; after the restart the job becomes visible again within the visibility timeout (300 s) and is retried.
 
 ## QueueBacklog
 

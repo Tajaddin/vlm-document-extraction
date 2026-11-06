@@ -37,7 +37,7 @@ variable "max_receive_count" {
 }
 
 variable "worker_visibility_timeout_s" {
-  description = "How long a worker holds a job before SQS offers it again; longer than the slowest extraction"
+  description = "Default time a received job stays hidden; the worker sets its own (VDE_WORKER_VISIBILITY_S) and extends it"
   type        = number
   default     = 300
 }

@@ -5,6 +5,7 @@ DynamoDB APIs are in tests/integration/test_worker.py."""
 from __future__ import annotations
 
 import json
+import threading
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -79,3 +80,31 @@ def test_a_job_that_cannot_be_marked_failed_is_not_swallowed() -> None:
     dynamo.update_item.side_effect = [None, ClientError({"Error": {"Code": "Throttled", "Message": ""}}, "UpdateItem")]
     with pytest.raises(ClientError):
         Worker(Settings(queue_url="q"), Crashing(), sqs, s3, dynamo).handle(message(receives=3))
+
+
+def test_the_message_stays_hidden_while_a_slow_extraction_runs() -> None:
+    sqs, s3, dynamo = clients()
+    extended = threading.Event()
+    sqs.change_message_visibility.side_effect = lambda **_: extended.set()
+
+    class Slow:
+        name = "slow"
+
+        def extract(self, doc: Document) -> Extraction:
+            assert extended.wait(5), "visibility was not extended while the job ran"
+            return FakeExtractor().extract(doc)
+
+    worker = Worker(Settings(queue_url="q", worker_visibility_s=1), Slow(), sqs, s3, dynamo)
+    worker.handle(message(receives=1))
+    sqs.change_message_visibility.assert_called_with(QueueUrl="q", ReceiptHandle="handle", VisibilityTimeout=1)
+    assert statuses(dynamo) == ["processing", "done"]
+    calls = sqs.change_message_visibility.call_count
+    threading.Event().wait(0.5)
+    assert sqs.change_message_visibility.call_count == calls  # stops once the job is over
+
+
+def test_messages_are_received_with_the_visibility_the_worker_extends() -> None:
+    sqs, s3, dynamo = clients()
+    sqs.receive_message.return_value = {}
+    Worker(Settings(queue_url="q", worker_visibility_s=600), FakeExtractor(), sqs, s3, dynamo).poll()
+    assert sqs.receive_message.call_args.kwargs["VisibilityTimeout"] == 600

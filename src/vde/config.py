@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     table: str = "vde-jobs"
     worker_metrics_port: int = 9108
     worker_wait_s: int = 10
+    # a received job stays hidden from other workers this long, and the worker keeps extending it while the job runs
+    worker_visibility_s: int = 300
 
     # Vertex AI (only with the owner's billing go-ahead)
     vertex_project: str | None = None
