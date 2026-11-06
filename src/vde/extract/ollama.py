@@ -55,7 +55,12 @@ class Ollama:
             logger.warning("ollama_retry", status=r.status_code, model=model)
         if r.status_code != 200:
             raise OllamaError(f"ollama {r.status_code}: {r.text[:200]}")
-        result: dict[str, Any] = r.json()
+        try:
+            result = r.json()
+        except ValueError:
+            result = None
+        if not isinstance(result, dict):  # e.g. a proxy's error page, or a body cut off in transit
+            raise OllamaError(f"ollama 200: not a JSON object: {r.text[:200]}")
         return result
 
 
