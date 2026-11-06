@@ -99,19 +99,23 @@ class Worker:
             logger.info("job_skipped", job=job_id, receives=receives)
             return
 
+        crash: Exception | None = None
         try:
             with self._hidden(message["ReceiptHandle"]):
                 error = self._run(job_id, kind, key)
         except Exception as e:  # whatever goes wrong, the job must not stay "processing" after its last delivery
-            logger.exception("job_crashed", job=job_id, receives=receives)
-            error = f"worker: {type(e).__name__}"
+            crash, error = e, f"worker: {type(e).__name__}"
 
         if error is not None:
             last = receives >= self.max_receive_count
-            JOBS.labels(kind, "failed" if last else "retry").inc()
-            logger.warning("extraction_failed", job=job_id, error=error, receives=receives, last=last)
-            if last:
-                self._update(job_id, {"status": "failed", "error": error, "updatedAt": _now()})
+            try:
+                if last:  # recorded before anything is logged: a log call can raise too
+                    self._update(job_id, {"status": "failed", "error": error, "updatedAt": _now()})
+            finally:
+                JOBS.labels(kind, "failed" if last else "retry").inc()
+                if crash is not None:
+                    logger.error("job_crashed", job=job_id, receives=receives, exc_info=crash)
+                logger.warning("extraction_failed", job=job_id, error=error, receives=receives, last=last)
             return  # not deleted: offered again, then dead-lettered
 
         self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"])

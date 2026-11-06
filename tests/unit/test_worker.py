@@ -99,6 +99,19 @@ def test_a_message_for_a_job_already_done_is_deleted_without_extracting_it() -> 
     sqs.delete_message.assert_called_once_with(QueueUrl="q", ReceiptHandle="handle")
 
 
+def test_a_log_call_that_raises_does_not_leave_the_job_processing(monkeypatch: pytest.MonkeyPatch) -> None:
+    # the unconfigured console renderer raises like this on a cp1252 console while it prints a traceback
+    logger = MagicMock()
+    logger.exception.side_effect = logger.error.side_effect = logger.warning.side_effect = UnicodeEncodeError(
+        "charmap", "\u2500", 0, 1, "character maps to <undefined>"
+    )
+    monkeypatch.setattr("vde.worker.app.logger", logger)
+    sqs, s3, dynamo = clients()
+    with pytest.raises(UnicodeEncodeError):
+        Worker(Settings(queue_url="q"), Crashing(), sqs, s3, dynamo).handle(message(receives=3))
+    assert statuses(dynamo) == ["processing", "failed"]
+
+
 def test_a_job_that_cannot_be_marked_failed_is_not_swallowed() -> None:
     sqs, s3, dynamo = clients()
     dynamo.update_item.side_effect = [None, ClientError({"Error": {"Code": "Throttled", "Message": ""}}, "UpdateItem")]
