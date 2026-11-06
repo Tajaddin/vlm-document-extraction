@@ -12,6 +12,8 @@ export interface Config {
   jobTtlDays: number;
   /** A job still "queued" this long after it was written, never marked as sent, has no message behind it. */
   requeueAfterSeconds: number;
+  /** A resend queues a failed job again at most this many times; after that the failure stands. */
+  maxRequeues: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -29,5 +31,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     maxPixels: Number(env.MAX_PIXELS ?? 50_000_000),
     jobTtlDays: Number(env.JOB_TTL_DAYS ?? 30),
     requeueAfterSeconds: Number(env.REQUEUE_AFTER_SECONDS ?? 900),
+    maxRequeues: Number(env.MAX_REQUEUES ?? 2),
   };
 }

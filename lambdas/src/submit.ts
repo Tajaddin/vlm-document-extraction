@@ -4,9 +4,9 @@
 // same job back instead of paying for a second extraction. DynamoDB's conditional put is the lock: only the request
 // that creates the record queues the job, and it marks the record `sentAt` once the message is in the queue. If
 // queueing fails, the record is removed again so a retry can start over. Two existing records are queued again instead
-// of returned: a failed job, and one still "queued" without `sentAt` REQUEUE_AFTER_SECONDS after it was written, which
-// is what a function stopped between the put and the send leaves behind. Taking a record over is a put conditional on
-// it being unchanged since it was read, so concurrent retries still queue it once.
+// of returned: a failed job (at most MAX_REQUEUES times), and one still "queued" without `sentAt` REQUEUE_AFTER_SECONDS
+// after it was written, which is what a function stopped between the put and the send leaves behind. Taking a record
+// over is a put conditional on it being unchanged since it was read, so concurrent retries still queue it once.
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
@@ -66,6 +66,7 @@ async function submit(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStr
   if (!(await claim(job))) {
     const seen = await read(id);
     if (!seen || !retryable(seen, now)) return duplicate(seen, location);
+    job.requeues = (seen.requeues ?? 0) + 1;
     if (!(await claim(job, seen))) return duplicate(await read(id), location); // another request took it over first
   }
 
@@ -133,7 +134,7 @@ async function claim(job: Job, seen?: Job): Promise<boolean> {
 }
 
 function retryable(job: Job, now: Date): boolean {
-  if (job.status === "failed") return true;
+  if (job.status === "failed") return (job.requeues ?? 0) < config.maxRequeues;
   const age = now.getTime() - Date.parse(job.updatedAt);
   return job.status === "queued" && job.sentAt === undefined && age >= config.requeueAfterSeconds * 1000;
 }

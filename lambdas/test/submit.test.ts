@@ -81,7 +81,18 @@ describe("submit", () => {
     const takeover = dynamo.commandCalls(PutCommand)[1]?.args[0].input;
     expect(takeover?.ConditionExpression).toBe("#status = :status AND updatedAt = :updatedAt");
     expect(takeover?.ExpressionAttributeValues).toEqual({ ":status": seen.status, ":updatedAt": seen.updatedAt });
+    expect(takeover?.Item).toMatchObject({ status: "queued", requeues: 1 });
     expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(1);
+  });
+
+  it("stops queueing a failed job again after MAX_REQUEUES resends", async () => {
+    dynamo.on(PutCommand).rejectsOnce(exists).resolves({});
+    dynamo.on(GetCommand).resolves({ Item: { id: jpegId, kind: "invoice", status: "failed", error: "truncated", key: "k", expiresAt: 1, updatedAt: ago(5), requeues: 2 } });
+    const r = await handler(event());
+    expect(r.statusCode).toBe(200);
+    expect(body(r)).toMatchObject({ status: "failed", error: "truncated", requeues: 2, duplicate: true });
+    expect(dynamo.commandCalls(PutCommand)).toHaveLength(1);
+    expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(0);
   });
 
   it("does not queue a job again while its message waits in a backed-up queue", async () => {

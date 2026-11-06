@@ -14,6 +14,8 @@ export interface Job {
   updatedAt: string;
   /** When the submit function put the job's message in the queue. */
   sentAt?: string;
+  /** How many times a resend has taken the record over and queued the job again. */
+  requeues?: number;
   expiresAt: number;
   result?: Record<string, unknown>;
   review?: string[];
