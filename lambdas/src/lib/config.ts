@@ -8,6 +8,8 @@ export interface Config {
   apiKeySha256: string;
   maxBytes: number;
   jobTtlDays: number;
+  /** A job still "queued" this long after it was written has no message behind it and may be queued again. */
+  requeueAfterSeconds: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -23,5 +25,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     apiKeySha256: read("API_KEY_SHA256").toLowerCase(),
     maxBytes: Number(env.MAX_BYTES ?? 4 * 1024 * 1024),
     jobTtlDays: Number(env.JOB_TTL_DAYS ?? 30),
+    requeueAfterSeconds: Number(env.REQUEUE_AFTER_SECONDS ?? 900),
   };
 }

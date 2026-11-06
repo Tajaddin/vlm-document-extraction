@@ -3,6 +3,10 @@
 // The job id is a hash of the kind and the bytes, so a client that retries (or sends the same document twice) gets the
 // same job back instead of paying for a second extraction. DynamoDB's conditional put is the lock: only the request
 // that creates the record queues the job. If queueing fails, the record is removed again so a retry can start over.
+// Two existing records are queued again instead of returned: a failed job, and one still "queued" REQUEUE_AFTER_SECONDS
+// after it was written, which is what a function stopped between the put and the send leaves behind (a job that waited
+// that long in a backed-up queue is then extracted twice, which the worker tolerates). Taking a record over is a put
+// conditional on it being unchanged since it was read, so concurrent retries still queue it once.
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
@@ -55,12 +59,12 @@ async function submit(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStr
     expiresAt: Math.floor(now.getTime() / 1000) + config.jobTtlDays * 86400,
   };
 
-  try {
-    await dynamo.send(new PutCommand({ TableName: config.table, Item: job, ConditionExpression: "attribute_not_exists(id)" }));
-  } catch (e) {
-    if (!(e instanceof ConditionalCheckFailedException)) throw e;
+  const location = { location: `/v1/documents/${id}` };
+  if (!(await claim(job))) {
     const existing = await dynamo.send(new GetCommand({ TableName: config.table, Key: { id } }));
-    return json(200, { ...view(existing.Item as Job), duplicate: true }, { location: `/v1/documents/${id}` });
+    const seen = existing.Item as Job | undefined;
+    if (!seen) return problem(503, "could not queue the document; retry");
+    if (!(retryable(seen, now) && (await claim(job, seen)))) return json(200, { ...view(seen), duplicate: true }, location);
   }
 
   try {
@@ -71,5 +75,28 @@ async function submit(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStr
     console.error(JSON.stringify({ level: "error", route: "submit", id, error: e instanceof Error ? e.name : "unknown" }));
     return problem(503, "could not queue the document; retry");
   }
-  return json(202, view(job), { location: `/v1/documents/${id}` });
+  return json(202, view(job), location);
+}
+
+/** Writes the job record, new or over `seen` if it is unchanged; false when another request got there first. */
+async function claim(job: Job, seen?: Job): Promise<boolean> {
+  const condition = seen
+    ? {
+        ConditionExpression: "#status = :status AND updatedAt = :updatedAt",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: { ":status": seen.status, ":updatedAt": seen.updatedAt },
+      }
+    : { ConditionExpression: "attribute_not_exists(id)" };
+  try {
+    await dynamo.send(new PutCommand({ TableName: config.table, Item: job, ...condition }));
+    return true;
+  } catch (e) {
+    if (e instanceof ConditionalCheckFailedException) return false;
+    throw e;
+  }
+}
+
+function retryable(job: Job, now: Date): boolean {
+  if (job.status === "failed") return true;
+  return job.status === "queued" && now.getTime() - Date.parse(job.updatedAt) >= config.requeueAfterSeconds * 1000;
 }

@@ -50,6 +50,58 @@ describe("submit", () => {
     expect(s3.commandCalls(PutObjectCommand)).toHaveLength(0);
   });
 
+  const exists = new ConditionalCheckFailedException({ message: "exists", $metadata: {} });
+  const ago = (seconds: number): string => new Date(Date.now() - seconds * 1000).toISOString();
+
+  it.each([
+    ["a failed job", { status: "failed", error: "truncated", updatedAt: ago(5) }],
+    ["a job left queued without a message", { status: "queued", updatedAt: ago(901) }],
+  ])("queues %s again, taking the record over only if it is unchanged", async (_name, seen) => {
+    dynamo.on(PutCommand).rejectsOnce(exists).resolves({});
+    dynamo.on(GetCommand).resolves({ Item: { id: jpegId, kind: "invoice", key: "k", expiresAt: 1, ...seen } });
+    const r = await handler(event());
+    expect(r.statusCode).toBe(202);
+    expect(body(r)).toMatchObject({ id: jpegId, status: "queued" });
+    expect(body(r)).not.toHaveProperty("error");
+    const takeover = dynamo.commandCalls(PutCommand)[1]?.args[0].input;
+    expect(takeover?.ConditionExpression).toBe("#status = :status AND updatedAt = :updatedAt");
+    expect(takeover?.ExpressionAttributeValues).toEqual({ ":status": seen.status, ":updatedAt": seen.updatedAt });
+    expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(1);
+  });
+
+  it("does not queue a job twice while its message is still waiting", async () => {
+    dynamo.on(PutCommand).rejects(exists);
+    dynamo.on(GetCommand).resolves({ Item: { id: jpegId, kind: "invoice", status: "queued", key: "k", expiresAt: 1, updatedAt: ago(60) } });
+    const r = await handler(event());
+    expect(r.statusCode).toBe(200);
+    expect(body(r)).toMatchObject({ status: "queued", duplicate: true });
+    expect(dynamo.commandCalls(PutCommand)).toHaveLength(1);
+    expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(0);
+  });
+
+  it("leaves a failed job to the request that took it over first", async () => {
+    dynamo.on(PutCommand).rejects(exists);
+    dynamo.on(GetCommand).resolves({ Item: { id: jpegId, kind: "invoice", status: "failed", key: "k", expiresAt: 1, updatedAt: ago(5) } });
+    const r = await handler(event());
+    expect(r.statusCode).toBe(200);
+    expect(body(r)).toMatchObject({ duplicate: true });
+    expect(dynamo.commandCalls(PutCommand)).toHaveLength(2);
+    expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(0);
+  });
+
+  it("does not take a DynamoDB error for a duplicate", async () => {
+    dynamo.on(PutCommand).rejects(new Error("throttled"));
+    await expect(handler(event())).rejects.toThrow("throttled");
+    expect(dynamo.commandCalls(GetCommand)).toHaveLength(0);
+  });
+
+  it("asks for a retry when the record it collided with is gone", async () => {
+    dynamo.on(PutCommand).rejects(exists);
+    dynamo.on(GetCommand).resolves({});
+    expect((await handler(event())).statusCode).toBe(503);
+    expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(0);
+  });
+
   it("removes the job record when it cannot be queued, so a retry starts over", async () => {
     sqs.on(SendMessageCommand).rejects(new Error("queue down"));
     const r = await handler(event());
