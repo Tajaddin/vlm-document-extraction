@@ -17,9 +17,11 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+from PIL import Image
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 
 from vde import checks, log
@@ -107,6 +109,11 @@ class Worker:
     def _run(self, job_id: str, kind: Kind, key: str) -> str | None:
         """Extract the document and store the result as `done`; the reason, when there is no result."""
         image = self.s3.get_object(Bucket=self.s.bucket, Key=key)["Body"].read()
+        # the size from the header alone, read by PIL, which the OCR path decodes with (submit has its own reader)
+        with Image.open(BytesIO(image)) as header:
+            width, height = header.size
+        if width * height > self.s.max_pixels:
+            return f"image too large: {width} x {height} pixels"
         result = self.extractor.extract(Document(id=job_id, kind=kind, image=image))
         SECONDS.labels(kind).observe(result.seconds)
         if result.fields is None:

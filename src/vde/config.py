@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     worker_wait_s: int = 10
     # a received job stays hidden from other workers this long, and the worker keeps extending it while the job runs
     worker_visibility_s: int = 300
+    # largest image the worker decodes, read from its header first; the same limit as the submit function's MAX_PIXELS
+    max_pixels: int = 50_000_000
 
     # Vertex AI (only with the owner's billing go-ahead)
     vertex_project: str | None = None

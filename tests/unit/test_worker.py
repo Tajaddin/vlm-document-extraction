@@ -5,12 +5,16 @@ DynamoDB APIs are in tests/integration/test_worker.py."""
 from __future__ import annotations
 
 import json
+import struct
 import threading
+import zlib
+from io import BytesIO
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 from botocore.exceptions import ClientError
+from PIL import Image
 
 from vde.config import Settings
 from vde.documents import Document
@@ -37,9 +41,15 @@ class Crashing:
         raise MemoryError("decoding the image")
 
 
-def clients() -> tuple[MagicMock, MagicMock, MagicMock]:
+def png(width: int, height: int) -> bytes:
+    out = BytesIO()
+    Image.new("RGB", (width, height), "white").save(out, "PNG")
+    return out.getvalue()
+
+
+def clients(image: bytes = png(4, 3)) -> tuple[MagicMock, MagicMock, MagicMock]:
     s3 = MagicMock()
-    s3.get_object.return_value = {"Body": MagicMock(read=lambda: b"\x89PNG")}
+    s3.get_object.return_value = {"Body": MagicMock(read=lambda: image)}
     return MagicMock(), s3, MagicMock()
 
 
@@ -80,6 +90,17 @@ def test_a_job_that_cannot_be_marked_failed_is_not_swallowed() -> None:
     dynamo.update_item.side_effect = [None, ClientError({"Error": {"Code": "Throttled", "Message": ""}}, "UpdateItem")]
     with pytest.raises(ClientError):
         Worker(Settings(queue_url="q"), Crashing(), sqs, s3, dynamo).handle(message(receives=3))
+
+
+def test_an_image_larger_than_its_first_header_says_is_not_extracted() -> None:
+    image = png(40, 30)
+    small = struct.pack(">I", 13) + b"IHDR" + struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+    decoy = small + struct.pack(">I", zlib.crc32(small[4:]))
+    sqs, s3, dynamo = clients(image[:8] + decoy + image[8:])  # PIL decodes it at the size of the last IHDR
+    Worker(Settings(queue_url="q", max_pixels=1000), FakeExtractor(), sqs, s3, dynamo).handle(message(receives=3))
+    assert statuses(dynamo) == ["processing", "failed"]
+    error = dynamo.update_item.call_args.kwargs["ExpressionAttributeValues"][":error"]
+    assert error == {"S": "image too large: 40 x 30 pixels"}
 
 
 def test_the_message_stays_hidden_while_a_slow_extraction_runs() -> None:

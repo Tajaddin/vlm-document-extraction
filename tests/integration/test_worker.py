@@ -6,11 +6,13 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Iterator
+from io import BytesIO
 from typing import Any
 
 import boto3
 import httpx
 import pytest
+from PIL import Image
 from testcontainers.core.container import DockerContainer
 
 from vde.config import Settings
@@ -20,7 +22,15 @@ from vde.extract.fake import FakeExtractor
 from vde.worker.app import Worker
 
 pytestmark = pytest.mark.integration
-IMAGE = b"\xff\xd8\xff\xe0 not really a jpeg"
+
+
+def jpeg() -> bytes:
+    out = BytesIO()
+    Image.new("RGB", (8, 8), "white").save(out, "JPEG")
+    return out.getvalue()
+
+
+IMAGE = jpeg()  # the worker reads the image's size from its header before extracting
 
 
 class Failing:
