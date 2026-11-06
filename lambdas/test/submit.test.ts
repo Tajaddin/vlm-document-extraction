@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handler } from "../src/submit.js";
-import { event, JPEG, jpeg, PNG, png } from "./event.js";
+import { beforeData, event, frame, ihdr, JPEG, jpeg, PNG, png } from "./event.js";
 
 const dynamo = mockClient(DynamoDBDocumentClient);
 const s3 = mockClient(S3Client);
@@ -126,6 +126,8 @@ describe("submit", () => {
     ["a JPEG over the pixel limit", { body: jpeg(10000, 6000).toString("base64") }, 413],
     ["a progressive JPEG over the pixel limit", { body: jpeg(10000, 6000, 0xc2).toString("base64") }, 413],
     ["a PNG over the pixel limit", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: png(65535, 65535).toString("base64") }, 413],
+    ["a JPEG with a small frame header in front of a large one", { body: beforeData(jpeg(100, 100), frame(10000, 7000)).toString("base64") }, 415],
+    ["a PNG with a small IHDR chunk in front of a large one", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: beforeData(png(100, 100), ihdr(10000, 7000)).toString("base64") }, 415],
     ["a JPEG that ends before its frame header", { body: JPEG.subarray(0, 20).toString("base64") }, 415],
     ["a PNG without its IHDR chunk", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: PNG.subarray(0, 12).toString("base64") }, 415],
     ["an image that says it has no pixels", { body: jpeg(595, 0).toString("base64") }, 415],
