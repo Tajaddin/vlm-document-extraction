@@ -156,6 +156,7 @@ describe("submit", () => {
     ["a PNG with a small IHDR chunk in front of a large one", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: beforeData(png(100, 100), ihdr(10000, 7000)).toString("base64") }, 415],
     ["a JPEG that ends before its frame header", { body: JPEG.subarray(0, 20).toString("base64") }, 415],
     ["a PNG without its IHDR chunk", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: PNG.subarray(0, 12).toString("base64") }, 415],
+    ["a PNG that ends before its image data", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: PNG.subarray(0, 33).toString("base64") }, 415],
     ["an image that says it has no pixels", { body: jpeg(595, 0).toString("base64") }, 415],
   ] as const)("refuses %s", async (_name, overrides, status) => {
     const r = await handler(event(overrides));
