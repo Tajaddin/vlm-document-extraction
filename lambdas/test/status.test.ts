@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { handler } from "../src/status.js";
 import { pixels, sniff } from "../src/lib/image.js";
 import { loadConfig } from "../src/lib/config.js";
-import { event, frame, jpeg, png } from "./event.js";
+import { beforeData, event, frame, jpeg, png } from "./event.js";
 
 const dynamo = mockClient(DynamoDBDocumentClient);
 const ID = "0123456789abcdef0123456789abcdef";
@@ -44,11 +44,14 @@ describe("helpers", () => {
   it("reads the pixel count from the image header without decoding it", () => {
     expect(pixels(jpeg(595, 841), "image/jpeg")).toBe(595 * 841);
     expect(pixels(png(864, 1296), "image/png")).toBe(864 * 1296);
+    const text = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x74, 0x45, 0x58, 0x74, 0x41, 0x00, 0x00, 0x00, 0x00]);
+    expect(pixels(beforeData(png(40, 30), text), "image/png")).toBe(1200); // a tEXt chunk before the image data
     const body = jpeg(40, 30).subarray(20);
     expect(pixels(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xff]), body]), "image/jpeg")).toBe(1200); // fill bytes
     expect(pixels(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0x01]), body]), "image/jpeg")).toBeUndefined(); // a marker with no segment
     expect(pixels(Buffer.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x08, 0x01, 0x01]), "image/jpeg")).toBeUndefined(); // scan before frame
     expect(pixels(Buffer.from([0xff, 0xd8, 0x00, 0x00, 0x00, 0x00]), "image/jpeg")).toBeUndefined();
+    expect(pixels(beforeData(jpeg(40, 30), Buffer.from([0xff, 0xfe, 0x00, 0x00])), "image/jpeg")).toBeUndefined(); // a segment shorter than its length field
   });
 
   it("refuses a header that hides a frame from it but not from the decoders", () => {
