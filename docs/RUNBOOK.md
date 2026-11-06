@@ -34,7 +34,8 @@ Over 50 documents have waited for 15 minutes: arrivals outpace extraction.
 Over 10% of extractions failed or are being retried. Failed jobs reach the dead-letter queue after 3 deliveries.
 
 - Confirm: `vde_worker_jobs_total` by outcome; worker logs, event `extraction_failed` with its `error`:
-  `truncated` (answers hitting the 2,048-token cap), `invalid_json`, `ollama 500` (model failed to load).
+  `truncated` (answers hitting the 2,048-token cap), `invalid_json`, `ollama 500` (model failed to load),
+  `worker: <exception>` (something raised; the traceback is in the `job_crashed` event before it).
 - `truncated` on many documents points at a model change; `ollama ...` errors at the host.
 - After the fix, redrive the dead-letter queue to the main queue (SQS `StartMessageMoveTask`, or move the messages
   with the AWS CLI) so those documents are extracted.
