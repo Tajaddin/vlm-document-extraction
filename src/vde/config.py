@@ -7,6 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,7 +39,8 @@ class Settings(BaseSettings):
     worker_metrics_port: int = 9108
     worker_wait_s: int = 10
     # a received job stays hidden from other workers this long, and the worker keeps extending it while the job runs
-    worker_visibility_s: int = 300
+    # (every third of it: 0 would extend in a busy loop; SQS allows at most 12 hours)
+    worker_visibility_s: int = Field(default=300, ge=1, le=43_200)
     # largest image the worker decodes, read from its header first; the same limit as the submit function's MAX_PIXELS
     max_pixels: int = 50_000_000
 

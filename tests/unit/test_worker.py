@@ -15,6 +15,7 @@ from unittest.mock import MagicMock
 import pytest
 from botocore.exceptions import ClientError
 from PIL import Image
+from pydantic import ValidationError
 
 from vde.config import Settings
 from vde.documents import Document
@@ -135,6 +136,12 @@ def test_the_message_stays_hidden_while_a_slow_extraction_runs() -> None:
     calls = sqs.change_message_visibility.call_count
     threading.Event().wait(0.5)
     assert sqs.change_message_visibility.call_count == calls  # stops once the job is over
+
+
+@pytest.mark.parametrize("seconds", [0, 43_201])
+def test_a_visibility_timeout_sqs_or_the_heartbeat_cannot_use_is_refused(seconds: int) -> None:
+    with pytest.raises(ValidationError, match="worker_visibility_s"):
+        Settings(queue_url="q", worker_visibility_s=seconds)
 
 
 def test_messages_are_received_with_the_visibility_the_worker_extends() -> None:
