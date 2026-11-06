@@ -16,22 +16,24 @@ On one RTX 4060 (8 GB), 100 test documents per set, 95% intervals from resamplin
 |---|---|---|
 | OCR + LLM (RapidOCR + qwen2.5:7b) | field F1 0.336 (0.295-0.379) | 0.922 (0.911-0.933) |
 | Best VLM, zero-shot | **0.680** (0.651-0.711), qwen3-vl:8b | 0.943 (0.932-0.953), qwen2.5vl:7b |
-| Best VLM, two examples from other layouts | no measurable gain | **0.964** (0.954-0.974), qwen3-vl:8b, 58% of invoices fully right |
+| Best VLM, two examples from other layouts | below zero-shot: 0.606 (0.540-0.666), qwen3-vl:8b, 22 receipts failed | **0.964** (0.954-0.974), qwen3-vl:8b, 58% of invoices fully right |
 | Cloud reference: Gemini 3.8 Flash on Vertex AI, zero-shot | **0.837** (0.799-0.871) | **0.987** (0.982-0.992), 79% of invoices fully right |
 
 - **Where the image is hard, the VLM wins outright:** on receipts qwen3-vl roughly doubles the OCR pipeline
-  (+0.34, 95% CI +0.30 to +0.38, paired).
+  (+0.34, 95% CI +0.30 to +0.39, paired).
 - **Where the document is clean, OCR nearly keeps up:** on digital invoices the zero-shot difference is a couple of
   points or less; two worked examples, even from other layouts, are what lift the VLM clearly ahead (+0.036).
 - **The small model needs examples:** qwen3.5:4b wraps 55% of its zero-shot receipt values in braces ("{24,000}");
-  two examples fix most of it (+0.32 F1).
+  two examples fix most of it (+0.25 F1 with the 25 receipts the two-shot run failed counted as misses, +0.32 on
+  the 74 both runs answered).
 - **Few-shot costs context:** two example receipts push a request to 10,506 tokens; at an 8K context a fifth of
-  them were refused. On an 8 GB card the 7-8B models already run 15-19% on the CPU.
+  them were refused, which puts two-shot qwen3-vl below its zero-shot run on receipts (-0.07, 95% CI -0.14 to
+  -0.02, paired). On an 8 GB card the 7-8B models already run 15-19% on the CPU.
 - **A hosted model is the ceiling, and it is cheap:** Gemini 3.8 Flash (run 2026-10-23, same prompt, schema and
   scorer) beats every local model on both sets, with intervals that do not overlap theirs: +0.50 over OCR + LLM on
-  receipts (paired, 98 documents both answered). Measured usage was 1,602 input and 114 output tokens per invoice
-  and 2,132 / 179 per receipt: about $0.39 for all 200 documents at the October 2026 list prices ($0.75 / $3.75 per
-  million), p50 2.3-2.9 s per document over the internet. The local models keep the documents on the machine.
+  receipts (+0.45 to +0.55, paired). Measured usage was 1,602 input and 114 output tokens per invoice and 2,132 /
+  179 per receipt: about $0.39 for all 200 documents at the October 2026 list prices ($0.75 / $3.75 per million),
+  p50 2.3-2.9 s per document over the internet. The local models keep the documents on the machine.
 
 ## What it shows
 
