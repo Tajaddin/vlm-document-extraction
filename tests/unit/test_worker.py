@@ -1,6 +1,6 @@
 """The worker's job states with stand-in AWS clients: every job ends `done` or `failed`, whatever the extractor does,
-and a job is never offered to a second worker while the first is still on it. The same paths against real SQS and
-DynamoDB APIs are in tests/integration/test_worker.py."""
+and the worker keeps extending the message's visibility while it works on the job. The same paths against real SQS
+and DynamoDB APIs are in tests/integration/test_worker.py."""
 
 from __future__ import annotations
 

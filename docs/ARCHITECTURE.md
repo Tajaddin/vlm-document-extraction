@@ -40,8 +40,9 @@ flowchart LR
 
 **The intake** is serverless (ADR 0003): it accepts a document, makes it a job and answers at once, and costs
 nothing while idle. `submit` validates the API key (SHA-256, constant-time compare), the declared type against the
-file's own bytes, the size and the pixel count in the image header; the job id is a hash of the kind and the bytes, so the same document twice is one
-job. DynamoDB's conditional put is the lock that makes that true under concurrency.
+file's own bytes, the size and the pixel count in the image header; the job id is a hash of the kind and the
+bytes, so the same document twice is one job. DynamoDB's conditional put is the lock that makes that true under
+concurrency.
 
 **Extraction** runs where the GPU is. The worker long-polls SQS, reads the image, runs the configured extractor,
 attaches review flags (`vde.checks`) and writes the result. SQS does the failure handling: a failed job is offered
