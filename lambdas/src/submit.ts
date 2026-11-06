@@ -64,10 +64,9 @@ async function submit(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStr
 
   const location = { location: `/v1/documents/${id}` };
   if (!(await claim(job))) {
-    const existing = await dynamo.send(new GetCommand({ TableName: config.table, Key: { id } }));
-    const seen = existing.Item as Job | undefined;
-    if (!seen) return problem(503, "could not queue the document; retry");
-    if (!(retryable(seen, now) && (await claim(job, seen)))) return json(200, { ...view(seen), duplicate: true }, location);
+    const seen = await read(id);
+    if (!seen || !retryable(seen, now)) return duplicate(seen, location);
+    if (!(await claim(job, seen))) return duplicate(await read(id), location); // another request took it over first
   }
 
   try {
@@ -99,6 +98,16 @@ async function markSent(job: Job): Promise<void> {
     // queues it once more
     if (!(e instanceof ConditionalCheckFailedException)) logError(job.id, e);
   }
+}
+
+async function read(id: string): Promise<Job | undefined> {
+  const found = await dynamo.send(new GetCommand({ TableName: config.table, Key: { id } }));
+  return found.Item as Job | undefined;
+}
+
+/** The existing job, as it is now; 503 when its record is gone (the request that wrote it could not queue it). */
+function duplicate(job: Job | undefined, location: Record<string, string>): APIGatewayProxyStructuredResultV2 {
+  return job ? json(200, { ...view(job), duplicate: true }, location) : problem(503, "could not queue the document; retry");
 }
 
 function logError(id: string, e: unknown): void {

@@ -105,12 +105,16 @@ describe("submit", () => {
     expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(0);
   });
 
-  it("leaves a failed job to the request that took it over first", async () => {
+  it("leaves a failed job to the request that took it over first, and answers with the job as it now is", async () => {
     dynamo.on(PutCommand).rejects(exists);
-    dynamo.on(GetCommand).resolves({ Item: { id: jpegId, kind: "invoice", status: "failed", key: "k", expiresAt: 1, updatedAt: ago(5) } });
+    dynamo
+      .on(GetCommand)
+      .resolvesOnce({ Item: { id: jpegId, kind: "invoice", status: "failed", error: "truncated", key: "k", expiresAt: 1, updatedAt: ago(5) } })
+      .resolves({ Item: { id: jpegId, kind: "invoice", status: "queued", key: "k", expiresAt: 1, updatedAt: ago(0) } });
     const r = await handler(event());
     expect(r.statusCode).toBe(200);
-    expect(body(r)).toMatchObject({ duplicate: true });
+    expect(body(r)).toMatchObject({ status: "queued", duplicate: true });
+    expect(body(r)).not.toHaveProperty("error");
     expect(dynamo.commandCalls(PutCommand)).toHaveLength(2);
     expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(0);
   });
