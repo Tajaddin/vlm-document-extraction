@@ -189,6 +189,7 @@ resource "aws_lambda_function" "function" {
       QUEUE_URL      = aws_sqs_queue.jobs.url
       API_KEY_SHA256 = var.api_key_sha256
       MAX_BYTES      = tostring(var.max_bytes)
+      MAX_PIXELS     = tostring(var.max_pixels)
       JOB_TTL_DAYS   = tostring(var.job_ttl_days)
     }
   }

@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handler } from "../src/submit.js";
-import { event, JPEG, PNG } from "./event.js";
+import { event, JPEG, jpeg, PNG, png } from "./event.js";
 
 const dynamo = mockClient(DynamoDBDocumentClient);
 const s3 = mockClient(S3Client);
@@ -123,6 +123,12 @@ describe("submit", () => {
     ["no body", { body: undefined }, 400],
     ["bytes that are not the declared type", { body: PNG.toString("base64") }, 415],
     ["a body over the size limit", { body: Buffer.concat([JPEG, Buffer.alloc(2000)]).toString("base64") }, 413],
+    ["a JPEG over the pixel limit", { body: jpeg(10000, 6000).toString("base64") }, 413],
+    ["a progressive JPEG over the pixel limit", { body: jpeg(10000, 6000, 0xc2).toString("base64") }, 413],
+    ["a PNG over the pixel limit", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: png(65535, 65535).toString("base64") }, 413],
+    ["a JPEG that ends before its frame header", { body: JPEG.subarray(0, 20).toString("base64") }, 415],
+    ["a PNG without its IHDR chunk", { headers: { "x-api-key": "test-key", "content-type": "image/png" }, body: PNG.subarray(0, 12).toString("base64") }, 415],
+    ["an image that says it has no pixels", { body: jpeg(595, 0).toString("base64") }, 415],
   ] as const)("refuses %s", async (_name, overrides, status) => {
     const r = await handler(event(overrides));
     expect(r.statusCode).toBe(status);

@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { dynamo, s3, sqs } from "./lib/clients.js";
 import { loadConfig } from "./lib/config.js";
 import { authorized, header, json, logRequest, problem } from "./lib/http.js";
-import { EXTENSIONS, isImageType, sniff } from "./lib/image.js";
+import { EXTENSIONS, isImageType, pixels, sniff } from "./lib/image.js";
 import { isKind, view, type Job } from "./lib/jobs.js";
 
 const config = loadConfig();
@@ -43,6 +43,9 @@ async function submit(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStr
   const bytes = Buffer.from(event.body, event.isBase64Encoded ? "base64" : "binary");
   if (bytes.length > config.maxBytes) return problem(413, `larger than ${String(config.maxBytes)} bytes`);
   if (sniff(bytes) !== contentType) return problem(415, `the bytes are not ${contentType}`);
+  const size = pixels(bytes, contentType);
+  if (size === undefined) return problem(415, `the ${contentType} header does not give the image's size`);
+  if (size > config.maxPixels) return problem(413, `larger than ${String(config.maxPixels)} pixels`);
 
   const id = createHash("sha256").update(kind).update(":").update(bytes).digest("hex").slice(0, 32);
   const key = `incoming/${id}.${EXTENSIONS[contentType]}`;

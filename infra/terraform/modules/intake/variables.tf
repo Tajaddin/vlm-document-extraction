@@ -24,6 +24,12 @@ variable "max_bytes" {
   default     = 4194304
 }
 
+variable "max_pixels" {
+  description = "Largest image, in pixels, the submit function accepts (read from the header, before any decoding)"
+  type        = number
+  default     = 50000000
+}
+
 variable "job_ttl_days" {
   description = "Days a job record and its image are kept"
   type        = number

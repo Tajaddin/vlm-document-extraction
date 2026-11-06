@@ -11,9 +11,9 @@ costs money every hour it waits.
 ## Decision
 
 1. **API Gateway (HTTP API) and two TypeScript Lambdas take the documents**: `submit` checks the API key (by its
-   SHA-256, in constant time), the declared type against the file's own bytes, and the size; stores the image in S3;
-   records the job in DynamoDB; and queues it in SQS. `status` reads the job back. They scale to zero and cost
-   nothing idle.
+   SHA-256, in constant time), the declared type against the file's own bytes, the size, and the pixel count the
+   image's header declares (a small file can decode to gigabytes); stores the image in S3; records the job in
+   DynamoDB; and queues it in SQS. `status` reads the job back. They scale to zero and cost nothing idle.
 2. **The job id is a hash of the kind and the bytes.** A retried or repeated upload is the same job: DynamoDB's
    conditional put is the lock, and only the request that creates the record queues the job. If queueing fails,
    the record is deleted so a retry can start over (no job stuck in `queued` without a message). Sending a failed

@@ -3,9 +3,9 @@ import { mockClient } from "aws-sdk-client-mock";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handler } from "../src/status.js";
-import { sniff } from "../src/lib/image.js";
+import { pixels, sniff } from "../src/lib/image.js";
 import { loadConfig } from "../src/lib/config.js";
-import { event } from "./event.js";
+import { event, jpeg, png } from "./event.js";
 
 const dynamo = mockClient(DynamoDBDocumentClient);
 const ID = "0123456789abcdef0123456789abcdef";
@@ -39,6 +39,16 @@ describe("helpers", () => {
   it("recognises image types by their bytes", () => {
     expect(sniff(Buffer.from([0xff, 0xd8, 0xff]))).toBe("image/jpeg");
     expect(sniff(Buffer.from("%PDF-1.7"))).toBeUndefined();
+  });
+
+  it("reads the pixel count from the image header without decoding it", () => {
+    expect(pixels(jpeg(595, 841), "image/jpeg")).toBe(595 * 841);
+    expect(pixels(png(864, 1296), "image/png")).toBe(864 * 1296);
+    const frame = jpeg(40, 30).subarray(20);
+    const padded = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xff, 0xff, 0x01]), frame]); // fill bytes, a marker with no segment
+    expect(pixels(padded, "image/jpeg")).toBe(1200);
+    expect(pixels(Buffer.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x08, 0x01, 0x01]), "image/jpeg")).toBeUndefined(); // scan before frame
+    expect(pixels(Buffer.from([0xff, 0xd8, 0x00, 0x00, 0x00, 0x00]), "image/jpeg")).toBeUndefined();
   });
 
   it("refuses to start without its configuration", () => {
