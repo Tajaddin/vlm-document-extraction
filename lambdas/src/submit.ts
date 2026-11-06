@@ -2,16 +2,16 @@
 //
 // The job id is a hash of the kind and the bytes, so a client that retries (or sends the same document twice) gets the
 // same job back instead of paying for a second extraction. DynamoDB's conditional put is the lock: only the request
-// that creates the record queues the job. If queueing fails, the record is removed again so a retry can start over.
-// Two existing records are queued again instead of returned: a failed job, and one still "queued" REQUEUE_AFTER_SECONDS
-// after it was written, which is what a function stopped between the put and the send leaves behind (a job that waited
-// that long in a backed-up queue is then extracted twice, which the worker tolerates). Taking a record over is a put
-// conditional on it being unchanged since it was read, so concurrent retries still queue it once.
+// that creates the record queues the job, and it marks the record `sentAt` once the message is in the queue. If
+// queueing fails, the record is removed again so a retry can start over. Two existing records are queued again instead
+// of returned: a failed job, and one still "queued" without `sentAt` REQUEUE_AFTER_SECONDS after it was written, which
+// is what a function stopped between the put and the send leaves behind. Taking a record over is a put conditional on
+// it being unchanged since it was read, so concurrent retries still queue it once.
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
-import { DeleteCommand, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
 import { createHash } from "node:crypto";
 
@@ -75,10 +75,34 @@ async function submit(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStr
     await sqs.send(new SendMessageCommand({ QueueUrl: config.queueUrl, MessageBody: JSON.stringify({ id, kind, key }) }));
   } catch (e) {
     await dynamo.send(new DeleteCommand({ TableName: config.table, Key: { id } }));
-    console.error(JSON.stringify({ level: "error", route: "submit", id, error: e instanceof Error ? e.name : "unknown" }));
+    logError(id, e);
     return problem(503, "could not queue the document; retry");
   }
+  await markSent(job);
   return json(202, view(job), location);
+}
+
+/** Records that the job's message is in the queue, so a resend never takes the record over as orphaned. */
+async function markSent(job: Job): Promise<void> {
+  try {
+    await dynamo.send(
+      new UpdateCommand({
+        TableName: config.table,
+        Key: { id: job.id },
+        UpdateExpression: "SET sentAt = :sentAt",
+        ConditionExpression: "updatedAt = :updatedAt",
+        ExpressionAttributeValues: { ":sentAt": new Date().toISOString(), ":updatedAt": job.updatedAt },
+      }),
+    );
+  } catch (e) {
+    // the job is queued either way: a worker already moved the record on, or a resend REQUEUE_AFTER_SECONDS from now
+    // queues it once more
+    if (!(e instanceof ConditionalCheckFailedException)) logError(job.id, e);
+  }
+}
+
+function logError(id: string, e: unknown): void {
+  console.error(JSON.stringify({ level: "error", route: "submit", id, error: e instanceof Error ? e.name : "unknown" }));
 }
 
 /** Writes the job record, new or over `seen` if it is unchanged; false when another request got there first. */
@@ -101,5 +125,6 @@ async function claim(job: Job, seen?: Job): Promise<boolean> {
 
 function retryable(job: Job, now: Date): boolean {
   if (job.status === "failed") return true;
-  return job.status === "queued" && now.getTime() - Date.parse(job.updatedAt) >= config.requeueAfterSeconds * 1000;
+  const age = now.getTime() - Date.parse(job.updatedAt);
+  return job.status === "queued" && job.sentAt === undefined && age >= config.requeueAfterSeconds * 1000;
 }

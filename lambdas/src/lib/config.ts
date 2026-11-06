@@ -10,7 +10,7 @@ export interface Config {
   /** Largest image, in pixels, the worker is asked to decode. */
   maxPixels: number;
   jobTtlDays: number;
-  /** A job still "queued" this long after it was written has no message behind it and may be queued again. */
+  /** A job still "queued" this long after it was written, never marked as sent, has no message behind it. */
   requeueAfterSeconds: number;
 }
 

@@ -12,6 +12,8 @@ export interface Job {
   bytes: number;
   createdAt: string;
   updatedAt: string;
+  /** When the submit function put the job's message in the queue. */
+  sentAt?: string;
   expiresAt: number;
   result?: Record<string, unknown>;
   review?: string[];
@@ -26,8 +28,8 @@ export function isKind(value: string | undefined): value is Kind {
   return value === "receipt" || value === "invoice";
 }
 
-/** The public view of a job: no storage keys. */
+/** The public view of a job: no storage keys or bookkeeping. */
 export function view(job: Job): Record<string, unknown> {
-  const { key, expiresAt, ...rest } = job;
+  const { key, expiresAt, sentAt, ...rest } = job;
   return rest;
 }

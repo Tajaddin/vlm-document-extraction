@@ -15,10 +15,11 @@ costs money every hour it waits.
    image's header declares (a small file can decode to gigabytes); stores the image in S3; records the job in
    DynamoDB; and queues it in SQS. `status` reads the job back. They scale to zero and cost nothing idle.
 2. **The job id is a hash of the kind and the bytes.** A retried or repeated upload is the same job: DynamoDB's
-   conditional put is the lock, and only the request that creates the record queues the job. If queueing fails,
-   the record is deleted so a retry can start over (no job stuck in `queued` without a message). Sending a failed
-   job again queues it again, and so does sending one still `queued` 15 minutes after it was recorded (the function
-   stopped before queueing it); both take the record over with a put conditional on it being unchanged.
+   conditional put is the lock, and only the request that creates the record queues the job, then marks the record
+   `sentAt`. If queueing fails, the record is deleted so a retry can start over (no job stuck in `queued` without a
+   message). Sending a failed job again queues it again, and so does sending one still `queued` without `sentAt`
+   15 minutes after it was recorded (the function stopped between the put and the send); both take the record over
+   with a put conditional on it being unchanged. A job waiting in a backed-up queue is returned as it is.
 3. **Extraction runs in a worker next to the GPU**, long-polling SQS. Any number of workers can share the queue;
    SQS's visibility timeout gives each job to one of them.
 4. **Failures use SQS's own machinery.** A failed extraction is not deleted: SQS offers it again and, after three

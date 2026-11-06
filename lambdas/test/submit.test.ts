@@ -1,7 +1,7 @@
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
-import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -38,6 +38,21 @@ describe("submit", () => {
     expect(object).toMatchObject({ Bucket: "vde-documents", Key: `incoming/${jpegId}.jpg`, ContentType: "image/jpeg" });
     const message = sqs.commandCalls(SendMessageCommand)[0]?.args[0].input;
     expect(JSON.parse(message?.MessageBody ?? "")).toEqual({ id: jpegId, kind: "invoice", key: `incoming/${jpegId}.jpg` });
+    const sent = dynamo.commandCalls(UpdateCommand)[0]?.args[0].input;
+    expect(sent).toMatchObject({ Key: { id: jpegId }, UpdateExpression: "SET sentAt = :sentAt", ConditionExpression: "updatedAt = :updatedAt" });
+    expect(sent?.ExpressionAttributeValues?.[":updatedAt"]).toBe(put?.Item?.updatedAt);
+  });
+
+  it.each([
+    ["a worker already moved the record on", new ConditionalCheckFailedException({ message: "changed", $metadata: {} }), 0],
+    ["DynamoDB refused the write", new Error("throttled"), 1],
+  ])("answers 202 when the job is queued but not marked as sent (%s)", async (_name, error, logged) => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    dynamo.on(UpdateCommand).rejects(error);
+    const r = await handler(event());
+    expect(r.statusCode).toBe(202);
+    expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(1);
+    expect(log).toHaveBeenCalledTimes(logged);
   });
 
   it("returns the existing job for the same document instead of queueing it twice", async () => {
@@ -67,6 +82,17 @@ describe("submit", () => {
     expect(takeover?.ConditionExpression).toBe("#status = :status AND updatedAt = :updatedAt");
     expect(takeover?.ExpressionAttributeValues).toEqual({ ":status": seen.status, ":updatedAt": seen.updatedAt });
     expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(1);
+  });
+
+  it("does not queue a job again while its message waits in a backed-up queue", async () => {
+    dynamo.on(PutCommand).rejectsOnce(exists).resolves({});
+    dynamo.on(GetCommand).resolves({ Item: { id: jpegId, kind: "invoice", status: "queued", key: "k", expiresAt: 1, updatedAt: ago(3600), sentAt: ago(3600) } });
+    const r = await handler(event());
+    expect(r.statusCode).toBe(200);
+    expect(body(r)).toMatchObject({ status: "queued", duplicate: true });
+    expect(body(r)).not.toHaveProperty("sentAt");
+    expect(dynamo.commandCalls(PutCommand)).toHaveLength(1);
+    expect(sqs.commandCalls(SendMessageCommand)).toHaveLength(0);
   });
 
   it("does not queue a job twice while its message is still waiting", async () => {

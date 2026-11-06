@@ -139,7 +139,7 @@ data "aws_iam_policy_document" "submit" {
     resources = ["${aws_s3_bucket.documents.arn}/incoming/*"]
   }
   statement {
-    actions   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:DeleteItem"]
+    actions   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"]
     resources = [aws_dynamodb_table.jobs.arn]
   }
   statement {
