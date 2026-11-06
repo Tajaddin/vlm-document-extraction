@@ -5,7 +5,7 @@ Inference needs the GPU, so this runs next to it rather than in Lambda (ADR 0003
 a job that fails (no answer from the extractor, or anything raised on the way) is not deleted, so SQS offers it again
 after the visibility timeout and, after `max_receive_count` deliveries, moves it to the dead-letter queue; the worker
 marks the job `failed` on its last delivery so the client sees why. A message that is not a job at all is left for the
-dead-letter queue the same way."""
+dead-letter queue the same way. A message for a job that is already done is deleted without extracting it again."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+from botocore.exceptions import ClientError
 from PIL import Image
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 
@@ -87,7 +88,17 @@ class Worker:
             logger.error("poison_message", message_id=message.get("MessageId"), receives=receives)
             return  # not deleted: SQS moves it to the dead-letter queue after max_receive_count deliveries
 
-        self._update(job_id, {"status": "processing", "updatedAt": _now()})
+        try:
+            self._update(job_id, {"status": "processing", "updatedAt": _now()}, unless="done")
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
+                raise
+            # a second message for a job already done (a resend or a redrive queued it again), or a record that is gone
+            self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"])
+            JOBS.labels(kind, "skipped").inc()
+            logger.info("job_skipped", job=job_id, receives=receives)
+            return
+
         try:
             with self._hidden(message["ReceiptHandle"]):
                 error = self._run(job_id, kind, key)
@@ -163,15 +174,22 @@ class Worker:
             done.set()
             thread.join()
 
-    def _update(self, job_id: str, values: dict[str, Any]) -> None:
+    def _update(self, job_id: str, values: dict[str, Any], unless: str | None = None) -> None:
+        """Set `values` on the job's record; with `unless`, only while the job is not in that state."""
         names = {f"#{k}": k for k in values}
+        attrs = {f":{k}": _attr(v) for k, v in values.items()}
+        condition = "attribute_exists(id)"
+        if unless is not None:
+            names["#status"] = "status"
+            attrs[":unless"] = _attr(unless)
+            condition += " AND #status <> :unless"
         self.dynamo.update_item(
             TableName=self.s.table,
             Key={"id": {"S": job_id}},
             UpdateExpression="SET " + ", ".join(f"#{k} = :{k}" for k in values),
-            ConditionExpression="attribute_exists(id)",
+            ConditionExpression=condition,
             ExpressionAttributeNames=names,
-            ExpressionAttributeValues={f":{k}": _attr(v) for k, v in values.items()},
+            ExpressionAttributeValues=attrs,
         )
 
     def queue_depth(self) -> None:

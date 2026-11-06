@@ -141,6 +141,20 @@ def test_a_job_is_extracted_flagged_stored_and_deleted(aws: dict[str, Any], queu
     assert depth(aws, queue) == 0
 
 
+def test_a_second_message_for_a_done_job_is_deleted_without_extracting_it(
+    aws: dict[str, Any], queues: tuple[str, str]
+) -> None:
+    queue, _ = queues
+    submit(aws, queue, "d" * 32)
+    assert worker(aws, queue, FakeExtractor()).poll() == 1
+    aws["sqs"].send_message(
+        QueueUrl=queue, MessageBody=json.dumps({"id": "d" * 32, "kind": "invoice", "key": f"incoming/{'d' * 32}.jpg"})
+    )
+    assert worker(aws, queue, Failing()).poll() == 1
+    assert job(aws, "d" * 32)["status"] == {"S": "done"}
+    assert depth(aws, queue) == 0
+
+
 def test_a_failing_extraction_is_retried_then_failed_and_dead_lettered(
     aws: dict[str, Any], queues: tuple[str, str]
 ) -> None:

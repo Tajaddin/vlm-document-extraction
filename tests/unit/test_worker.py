@@ -85,6 +85,19 @@ def test_a_result_the_table_refuses_fails_the_job_on_the_last_delivery() -> None
     sqs.delete_message.assert_not_called()
 
 
+def test_a_message_for_a_job_already_done_is_deleted_without_extracting_it() -> None:
+    sqs, s3, dynamo = clients()
+    done = ClientError({"Error": {"Code": "ConditionalCheckFailedException", "Message": ""}}, "UpdateItem")
+    dynamo.update_item.side_effect = done
+    extractor = MagicMock()
+    Worker(Settings(queue_url="q"), extractor, sqs, s3, dynamo).handle(message(receives=1))
+    update = dynamo.update_item.call_args.kwargs
+    assert update["ConditionExpression"] == "attribute_exists(id) AND #status <> :unless"
+    assert update["ExpressionAttributeValues"][":unless"] == {"S": "done"}
+    extractor.extract.assert_not_called()
+    sqs.delete_message.assert_called_once_with(QueueUrl="q", ReceiptHandle="handle")
+
+
 def test_a_job_that_cannot_be_marked_failed_is_not_swallowed() -> None:
     sqs, s3, dynamo = clients()
     dynamo.update_item.side_effect = [None, ClientError({"Error": {"Code": "Throttled", "Message": ""}}, "UpdateItem")]
