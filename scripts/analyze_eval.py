@@ -1,7 +1,8 @@
 """Analysis of the test-set runs, from their committed reports and predictions:
 
-- paired comparisons: each method against the OCR + LLM baseline, and two-shot against zero-shot, on the documents
-  where both runs produced an answer, with a 95% bootstrap interval on the difference in field F1;
+- paired comparisons: each method against the OCR + LLM baseline, and two-shot against zero-shot, with a 95%
+  bootstrap interval on the difference in field F1. A document a run failed counts as an empty answer, as it does in
+  the run's headline F1; the same comparison on only the documents both runs answered is reported beside it;
 - why runs failed (context overflow, truncation) and how often;
 - the brace artifact (values like "{24,000}") per run;
 - the review flags: wrong extractions caught, flags that fired on correct ones, flags on the gold labels.
@@ -35,10 +36,23 @@ def load(dataset: str, run: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
 
 
 def paired(a: dict[str, Any], b: dict[str, Any], n: int = 2000, seed: int = 0) -> dict[str, Any]:
-    """F1 of b minus F1 of a on the documents both answered, with a bootstrap interval over those documents."""
+    """F1 of b minus F1 of a over every document, a failed one scored as an empty answer, and over the documents both
+    answered; each with a bootstrap interval over its documents."""
     da = {d["id"]: d for d in a["per_document"]}
     db = {d["id"]: d for d in b["per_document"]}
-    ids = [i for i in da if i in db and not da[i]["error"] and not db[i]["error"]]
+    ids = [i for i in da if i in db]
+    answered = [i for i in ids if not da[i]["error"] and not db[i]["error"]]
+    return {
+        **difference(da, db, ids, n, seed),
+        "failed_a": sum(1 for i in ids if da[i]["error"]),
+        "failed_b": sum(1 for i in ids if db[i]["error"]),
+        "answered_by_both": difference(da, db, answered, n, seed),
+    }
+
+
+def difference(
+    da: dict[str, dict[str, Any]], db: dict[str, dict[str, Any]], ids: list[str], n: int, seed: int
+) -> dict[str, Any]:
     ca = [Counts(da[i]["tp"], da[i]["fp"], da[i]["fn"]) for i in ids]
     cb = [Counts(db[i]["tp"], db[i]["fp"], db[i]["fn"]) for i in ids]
     rng = np.random.default_rng(seed)

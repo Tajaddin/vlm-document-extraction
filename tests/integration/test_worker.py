@@ -1,16 +1,18 @@
-"""The worker against real S3, SQS and DynamoDB APIs: a Floci container started by Testcontainers. The queue offers a
-job again after one second and dead-letters it after two deliveries, so the failure paths run in seconds."""
+"""The worker against real S3, SQS and DynamoDB APIs: a Floci container started by Testcontainers. The worker hides a
+job for one second and the queue dead-letters it after two deliveries, so the failure paths run in seconds."""
 
 from __future__ import annotations
 
 import json
 import time
 from collections.abc import Iterator
+from io import BytesIO
 from typing import Any
 
 import boto3
 import httpx
 import pytest
+from PIL import Image
 from testcontainers.core.container import DockerContainer
 
 from vde.config import Settings
@@ -20,7 +22,15 @@ from vde.extract.fake import FakeExtractor
 from vde.worker.app import Worker
 
 pytestmark = pytest.mark.integration
-IMAGE = b"\xff\xd8\xff\xe0 not really a jpeg"
+
+
+def jpeg() -> bytes:
+    out = BytesIO()
+    Image.new("RGB", (8, 8), "white").save(out, "JPEG")
+    return out.getvalue()
+
+
+IMAGE = jpeg()  # the worker reads the image's size from its header before extracting
 
 
 class Failing:
@@ -87,7 +97,14 @@ def submit(aws: dict[str, Any], queue: str, job_id: str, body: str | None = None
 
 
 def worker(aws: dict[str, Any], queue: str, extractor: Any) -> Worker:
-    settings = Settings(queue_url=queue, bucket="docs", table="jobs", aws_endpoint_url=aws["url"], worker_wait_s=1)
+    settings = Settings(
+        queue_url=queue,
+        bucket="docs",
+        table="jobs",
+        aws_endpoint_url=aws["url"],
+        worker_wait_s=1,
+        worker_visibility_s=1,
+    )
     return Worker(settings, extractor, aws["sqs"], aws["s3"], aws["dynamodb"], max_receive_count=2)
 
 
@@ -121,6 +138,20 @@ def test_a_job_is_extracted_flagged_stored_and_deleted(aws: dict[str, Any], queu
     assert item["result"]["M"]["total"] == {"N": "100.0"}
     assert {f["S"] for f in item["review"]["L"]} == {"no_invoice_number"}  # the stand-in returns no number
     assert item["model"] == {"S": "fake:fake"}
+    assert depth(aws, queue) == 0
+
+
+def test_a_second_message_for_a_done_job_is_deleted_without_extracting_it(
+    aws: dict[str, Any], queues: tuple[str, str]
+) -> None:
+    queue, _ = queues
+    submit(aws, queue, "d" * 32)
+    assert worker(aws, queue, FakeExtractor()).poll() == 1
+    aws["sqs"].send_message(
+        QueueUrl=queue, MessageBody=json.dumps({"id": "d" * 32, "kind": "invoice", "key": f"incoming/{'d' * 32}.jpg"})
+    )
+    assert worker(aws, queue, Failing()).poll() == 1
+    assert job(aws, "d" * 32)["status"] == {"S": "done"}
     assert depth(aws, queue) == 0
 
 

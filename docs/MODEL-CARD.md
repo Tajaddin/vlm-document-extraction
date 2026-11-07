@@ -53,15 +53,18 @@ configuration 58% of held-out invoices had every field right, and the review fla
 | qwen3.5:4b, zero-shot | 0.926 (0.915-0.936) | 15% | 2.6 s |
 | OCR + LLM | 0.922 (0.911-0.933) | 22% | 3.9 s |
 
-**What the paired comparisons say** (difference in field F1 on documents both runs answered, 95% bootstrap
-interval):
+**What the paired comparisons say** (difference in field F1 over all 100 documents, a failed one counting as a
+miss as in the tables above, with a 95% bootstrap interval; `answered_by_both` in `analysis.json` repeats each on only
+the documents both runs answered):
 
-- On photographed receipts a VLM roughly doubles the OCR pipeline: qwen3-vl +0.34 (+0.30 to +0.38).
+- On photographed receipts a VLM roughly doubles the OCR pipeline: qwen3-vl +0.34 (+0.30 to +0.39).
 - On clean digital invoices the OCR pipeline nearly keeps up zero-shot: qwen3-vl +0.006 (-0.012 to +0.023, not
   significant), qwen2.5vl +0.020 (+0.006 to +0.034).
 - Two examples from other layouts help on unseen layouts: qwen3-vl +0.036 on invoices (+0.022 to +0.052). On
-  receipts they make no measurable difference to qwen3-vl (+0.015, -0.022 to +0.050, on the 78 receipts where both
-  runs answered) but fix the 4B model's formatting (+0.32, +0.25 to +0.38).
+  receipts they cost qwen3-vl more than they give at an 8K context: -0.07 (-0.14 to -0.02), because 22 two-shot
+  requests failed; on the 78 receipts both runs answered the difference is +0.015 (-0.022 to +0.050), a tie. They fix
+  the 4B model's formatting: +0.25 (+0.18 to +0.31) despite its 25 failures, +0.32 (+0.25 to +0.38) on the 74
+  receipts both runs answered.
 
 ## Failure modes
 

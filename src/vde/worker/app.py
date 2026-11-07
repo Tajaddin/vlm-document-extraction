@@ -2,25 +2,32 @@
 DynamoDB, delete the message.
 
 Inference needs the GPU, so this runs next to it rather than in Lambda (ADR 0003). Failure handling leans on SQS:
-a job that fails is not deleted, so SQS offers it again after the visibility timeout and, after `max_receive_count`
-deliveries, moves it to the dead-letter queue; the worker marks the job `failed` on its last delivery so the client
-sees why. A message that is not a job at all is left for the dead-letter queue the same way."""
+a job that fails (no answer from the extractor, or anything raised on the way) is not deleted, so SQS offers it again
+after the visibility timeout and, after `max_receive_count` deliveries, moves it to the dead-letter queue; the worker
+marks the job `failed` on its last delivery so the client sees why. A message that is not a job at all is left for the
+dead-letter queue the same way. A message for a job that is already done is deleted without extracting it again."""
 
 from __future__ import annotations
 
 import json
 import signal
 import tempfile
+import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+from botocore.exceptions import ClientError
+from PIL import Image
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 
 from vde import checks, log
 from vde.config import Settings
-from vde.documents import Document
+from vde.documents import Document, Kind
 from vde.extract.base import Extractor
 
 logger = log.get(__name__)
@@ -61,6 +68,7 @@ class Worker:
             QueueUrl=self.queue_url,
             MaxNumberOfMessages=1,
             WaitTimeSeconds=self.s.worker_wait_s,
+            VisibilityTimeout=self.s.worker_visibility_s,
             MessageSystemAttributeNames=["ApproximateReceiveCount"],
         )
         messages = response.get("Messages", [])
@@ -80,19 +88,51 @@ class Worker:
             logger.error("poison_message", message_id=message.get("MessageId"), receives=receives)
             return  # not deleted: SQS moves it to the dead-letter queue after max_receive_count deliveries
 
-        self._update(job_id, {"status": "processing", "updatedAt": _now()})
-        image = self.s3.get_object(Bucket=self.s.bucket, Key=key)["Body"].read()
-        doc = Document(id=job_id, kind=kind, image=image)
-        result = self.extractor.extract(doc)
-        SECONDS.labels(kind).observe(result.seconds)
+        try:
+            self._update(job_id, {"status": "processing", "updatedAt": _now()}, unless="done")
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
+                raise
+            # a second message for a job already done (a resend or a redrive queued it again), or a record that is gone
+            self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"])
+            JOBS.labels(kind, "skipped").inc()
+            logger.info("job_skipped", job=job_id, receives=receives)
+            return
 
-        if result.fields is None:
+        crash: Exception | None = None
+        try:
+            with self._hidden(message["ReceiptHandle"]):
+                error = self._run(job_id, kind, key)
+        except Exception as e:  # whatever goes wrong, the job must not stay "processing" after its last delivery
+            crash, error = e, f"worker: {type(e).__name__}"
+
+        if error is not None:
             last = receives >= self.max_receive_count
-            JOBS.labels(kind, "failed" if last else "retry").inc()
-            logger.warning("extraction_failed", job=job_id, error=result.error, receives=receives, last=last)
-            if last:
-                self._update(job_id, {"status": "failed", "error": result.error or "unknown", "updatedAt": _now()})
+            try:
+                if last:  # recorded before anything is logged: a log call can raise too
+                    self._update(job_id, {"status": "failed", "error": error, "updatedAt": _now()})
+            finally:
+                JOBS.labels(kind, "failed" if last else "retry").inc()
+                if crash is not None:
+                    logger.error("job_crashed", job=job_id, receives=receives, exc_info=crash)
+                logger.warning("extraction_failed", job=job_id, error=error, receives=receives, last=last)
             return  # not deleted: offered again, then dead-lettered
+
+        self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"])
+        JOBS.labels(kind, "done").inc()
+
+    def _run(self, job_id: str, kind: Kind, key: str) -> str | None:
+        """Extract the document and store the result as `done`; the reason, when there is no result."""
+        image = self.s3.get_object(Bucket=self.s.bucket, Key=key)["Body"].read()
+        # the size from the header alone, read by PIL, which the OCR path decodes with (submit has its own reader)
+        with Image.open(BytesIO(image)) as header:
+            width, height = header.size
+        if width * height > self.s.max_pixels:
+            return f"image too large: {width} x {height} pixels"
+        result = self.extractor.extract(Document(id=job_id, kind=kind, image=image))
+        SECONDS.labels(kind).observe(result.seconds)
+        if result.fields is None:
+            return result.error or "unknown"
 
         review = checks.flags(kind, result.fields)
         for flag in review:
@@ -110,19 +150,50 @@ class Worker:
                 "updatedAt": _now(),
             },
         )
-        self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"])
-        JOBS.labels(kind, "done").inc()
         logger.info("job_done", job=job_id, kind=kind, seconds=round(result.seconds, 2), review=review)
+        return None
 
-    def _update(self, job_id: str, values: dict[str, Any]) -> None:
+    @contextmanager
+    def _hidden(self, receipt_handle: str) -> Iterator[None]:
+        """Extend the message's visibility every third of the timeout while the job runs, so SQS never offers a slow
+        extraction to another worker halfway through (it would run twice)."""
+        done = threading.Event()
+
+        def extend() -> None:
+            while not done.wait(self.s.worker_visibility_s / 3):
+                try:
+                    self.sqs.change_message_visibility(
+                        QueueUrl=self.queue_url,
+                        ReceiptHandle=receipt_handle,
+                        VisibilityTimeout=self.s.worker_visibility_s,
+                    )
+                except Exception:  # the next attempt may get through; at worst SQS offers the job again
+                    logger.warning("visibility_not_extended", exc_info=True)
+
+        thread = threading.Thread(target=extend, name="visibility", daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            done.set()
+            thread.join()
+
+    def _update(self, job_id: str, values: dict[str, Any], unless: str | None = None) -> None:
+        """Set `values` on the job's record; with `unless`, only while the job is not in that state."""
         names = {f"#{k}": k for k in values}
+        attrs = {f":{k}": _attr(v) for k, v in values.items()}
+        condition = "attribute_exists(id)"
+        if unless is not None:
+            names["#status"] = "status"
+            attrs[":unless"] = _attr(unless)
+            condition += " AND #status <> :unless"
         self.dynamo.update_item(
             TableName=self.s.table,
             Key={"id": {"S": job_id}},
             UpdateExpression="SET " + ", ".join(f"#{k} = :{k}" for k in values),
-            ConditionExpression="attribute_exists(id)",
+            ConditionExpression=condition,
             ExpressionAttributeNames=names,
-            ExpressionAttributeValues={f":{k}": _attr(v) for k, v in values.items()},
+            ExpressionAttributeValues=attrs,
         )
 
     def queue_depth(self) -> None:

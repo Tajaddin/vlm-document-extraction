@@ -62,6 +62,14 @@ def test_invalid_json_is_an_error_not_a_crash() -> None:
 
 
 @respx.mock
+@pytest.mark.parametrize("reply", [httpx.Response(200, text="<html>bad gateway</html>"), httpx.Response(200, json=[1])])
+def test_a_reply_that_is_not_a_json_object_is_an_error_not_a_crash(reply: httpx.Response) -> None:
+    respx.post(f"{URL}/api/chat").mock(return_value=reply)
+    result = VisionExtractor(Ollama(URL), "m").extract(INVOICE)
+    assert result.fields is None and (result.error or "").startswith("ollama 200:")
+
+
+@respx.mock
 def test_one_server_error_is_retried_two_are_reported() -> None:
     route = respx.post(f"{URL}/api/chat").mock(
         side_effect=[httpx.Response(500, text="loading"), answer('{"total": 1}')]

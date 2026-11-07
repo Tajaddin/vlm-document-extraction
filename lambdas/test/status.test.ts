@@ -3,9 +3,9 @@ import { mockClient } from "aws-sdk-client-mock";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handler } from "../src/status.js";
-import { sniff } from "../src/lib/image.js";
+import { pixels, sniff } from "../src/lib/image.js";
 import { loadConfig } from "../src/lib/config.js";
-import { event } from "./event.js";
+import { beforeData, event, frame, jpeg, png } from "./event.js";
 
 const dynamo = mockClient(DynamoDBDocumentClient);
 const ID = "0123456789abcdef0123456789abcdef";
@@ -39,6 +39,28 @@ describe("helpers", () => {
   it("recognises image types by their bytes", () => {
     expect(sniff(Buffer.from([0xff, 0xd8, 0xff]))).toBe("image/jpeg");
     expect(sniff(Buffer.from("%PDF-1.7"))).toBeUndefined();
+  });
+
+  it("reads the pixel count from the image header without decoding it", () => {
+    expect(pixels(jpeg(595, 841), "image/jpeg")).toBe(595 * 841);
+    expect(pixels(png(864, 1296), "image/png")).toBe(864 * 1296);
+    const text = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x74, 0x45, 0x58, 0x74, 0x41, 0x00, 0x00, 0x00, 0x00]);
+    expect(pixels(beforeData(png(40, 30), text), "image/png")).toBe(1200); // a tEXt chunk before the image data
+    const body = jpeg(40, 30).subarray(20);
+    expect(pixels(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xff]), body]), "image/jpeg")).toBe(1200); // fill bytes
+    expect(pixels(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0x01]), body]), "image/jpeg")).toBeUndefined(); // a marker with no segment
+    expect(pixels(Buffer.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x08, 0x01, 0x01]), "image/jpeg")).toBeUndefined(); // scan before frame
+    expect(pixels(Buffer.from([0xff, 0xd8, 0x00, 0x00, 0x00, 0x00]), "image/jpeg")).toBeUndefined();
+    expect(pixels(beforeData(jpeg(40, 30), Buffer.from([0xff, 0xfe, 0x00, 0x00])), "image/jpeg")).toBeUndefined(); // a segment shorter than its length field
+  });
+
+  it("refuses a header that hides a frame from it but not from the decoders", () => {
+    // PIL and Go skip the marker FF 00 as two bytes and take the 10000 x 7000 frame; read as a segment, FF 00 would
+    // jump 65,474 bytes onto a 100 x 100 frame that the decoders see as the inside of an APP1 segment
+    const app1 = Buffer.alloc(65533);
+    frame(100, 100).copy(app1, 65476 - 27);
+    const hidden = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0x00]), frame(10000, 7000), Buffer.from([0xff, 0xe1, 0xff, 0xff]), app1, jpeg(1, 1).subarray(39)]);
+    expect(pixels(hidden, "image/jpeg")).toBeUndefined();
   });
 
   it("refuses to start without its configuration", () => {

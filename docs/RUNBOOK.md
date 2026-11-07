@@ -18,8 +18,8 @@ The process answers but has not asked SQS for work in 10 minutes: the loop is st
 
 - Confirm: `vde_worker_last_poll_timestamp_seconds` on `:9108/metrics`; `ollama ps` on the host (is a model loaded,
   on the GPU?).
-- Ollama hung or out of VRAM: restart Ollama, then the worker. The job in flight becomes visible again after the
-  visibility timeout and is retried.
+- Ollama hung or out of VRAM: restart Ollama, then the worker. The worker keeps the job in flight hidden for as long
+  as it runs; after the restart the job becomes visible again within the visibility timeout (300 s) and is retried.
 
 ## QueueBacklog
 
@@ -34,7 +34,9 @@ Over 50 documents have waited for 15 minutes: arrivals outpace extraction.
 Over 10% of extractions failed or are being retried. Failed jobs reach the dead-letter queue after 3 deliveries.
 
 - Confirm: `vde_worker_jobs_total` by outcome; worker logs, event `extraction_failed` with its `error`:
-  `truncated` (answers hitting the 2,048-token cap), `invalid_json`, `ollama 500` (model failed to load).
+  `truncated` (answers hitting the 2,048-token cap), `invalid_json`, `ollama 500` (model failed to load),
+  `image too large: <width> x <height> pixels` (over `VDE_MAX_PIXELS`, read from the header before decoding),
+  `worker: <exception>` (something raised; the traceback is in the `job_crashed` event before it).
 - `truncated` on many documents points at a model change; `ollama ...` errors at the host.
 - After the fix, redrive the dead-letter queue to the main queue (SQS `StartMessageMoveTask`, or move the messages
   with the AWS CLI) so those documents are extracted.

@@ -24,6 +24,12 @@ variable "max_bytes" {
   default     = 4194304
 }
 
+variable "max_pixels" {
+  description = "Largest image, in pixels, the submit function accepts (read from the header, before any decoding)"
+  type        = number
+  default     = 50000000
+}
+
 variable "job_ttl_days" {
   description = "Days a job record and its image are kept"
   type        = number
@@ -37,7 +43,7 @@ variable "max_receive_count" {
 }
 
 variable "worker_visibility_timeout_s" {
-  description = "How long a worker holds a job before SQS offers it again; longer than the slowest extraction"
+  description = "Default time a received job stays hidden; the worker sets its own (VDE_WORKER_VISIBILITY_S) and extends it"
   type        = number
   default     = 300
 }
